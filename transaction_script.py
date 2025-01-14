@@ -21,7 +21,7 @@ ISSUER_ADDRESS = "rnQUEEg8yyjrwk9FhyXpKavHyCRJM9BDMW"  # Replace with the actual
 ACCOUNT_TO_CHECK = ISSUER_ADDRESS
 
 # Output CSV filename
-OUTPUT_CSV_FILENAME = "xrp_token_payments1.csv"
+OUTPUT_CSV_FILENAME = "xrp_token_payments.csv"
 
 # How many transactions to fetch per batch
 BATCH_LIMIT = 500
