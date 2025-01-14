@@ -7,7 +7,7 @@ import os
 # Run main.py if CSV does not exist
 if not os.path.exists("transactions.csv"):
     st.info("Generating transactions.csv using main.py...")
-    subprocess.run(["python", "main.py"], check=True)
+    subprocess.run(["python", "transaction_script.py"], check=True)
 
 # Function to load the CSV file
 @st.cache_data
