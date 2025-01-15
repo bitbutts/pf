@@ -69,13 +69,21 @@ def create_graph(data):
 
     return G
 
-# Function to plot the network graph
-def plot_graph(G):
+# Function to plot the graph with adjustable node and edge sizes
+def plot_graph(G, node_scale=10, edge_scale=1):
+    """
+    Plots a network graph with adjustable node sizes and edge widths.
+
+    Args:
+        G (nx.DiGraph): The directed graph to plot.
+        node_scale (float): Scaling factor for node sizes.
+        edge_scale (float): Scaling factor for edge widths.
+    """
     plt.figure(figsize=(12, 12))
 
-    # Get node sizes and edge widths
-    node_sizes = [G.nodes[node]['size'] * 10 for node in G.nodes]  # Scale sizes for visualization
-    edge_widths = [G[u][v]['weight'] for u, v in G.edges]
+    # Get scaled node sizes and edge widths
+    node_sizes = [G.nodes[node]['size'] * node_scale for node in G.nodes]
+    edge_widths = [G[u][v]['weight'] * edge_scale for u, v in G.edges]
 
     # Draw the graph
     pos = nx.spring_layout(G, seed=42)
