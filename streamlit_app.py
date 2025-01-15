@@ -8,7 +8,8 @@ import os
 # Run main.py if CSV does not exist
 if not os.path.exists("xrp_token_payments.csv"):
     st.info("Generating transactions.csv using main.py...")
-    subprocess.run(["python", "transaction_script.py"], check=True)
+    result = subprocess.run(["python", "transaction_script.py"], check=True,text=True,capture_output=True)
+    st.info(result.stdout)
 
 # Function to load the CSV file
 @st.cache_data
