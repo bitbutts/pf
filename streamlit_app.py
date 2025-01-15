@@ -70,14 +70,15 @@ def create_graph(data):
     return G
 
 # Function to plot the graph with adjustable node and edge sizes
-def plot_graph(G, node_scale=0.000002, edge_scale=0.000000003):
+def plot_graph(G, node_scale=0.000008, edge_scale=0.000000003, spacing_factor=5):
     """
-    Plots a network graph with adjustable node sizes and edge widths.
+    Plots a network graph with adjustable node sizes, edge widths, and node spacing.
 
     Args:
         G (nx.DiGraph): The directed graph to plot.
         node_scale (float): Scaling factor for node sizes.
         edge_scale (float): Scaling factor for edge widths.
+        spacing_factor (float): Multiplier to control the spacing between nodes.
     """
     plt.figure(figsize=(12, 12))
 
@@ -85,11 +86,12 @@ def plot_graph(G, node_scale=0.000002, edge_scale=0.000000003):
     node_sizes = [G.nodes[node]['size'] * node_scale for node in G.nodes]
     edge_widths = [G[u][v]['weight'] * edge_scale for u, v in G.edges]
 
+    # Calculate node positions with increased spacing
+    pos = nx.spring_layout(G, seed=42, k=spacing_factor / len(G.nodes), iterations=50)
+
     # Draw the graph
-    pos = nx.spring_layout(G, seed=42)
     nx.draw_networkx_nodes(G, pos, node_size=node_sizes, node_color="skyblue", alpha=0.8)
-    nx.draw_networkx_edges(G, pos, width=edge_widths, alpha=0.5)
-    #nx.draw_networkx_labels(G, pos, font_size=8, font_color="black")
+    nx.draw_networkx_edges(G, pos, width=1, alpha=0.5)
 
     plt.title("Network Graph of Address Relationships", fontsize=16)
     plt.axis("off")
