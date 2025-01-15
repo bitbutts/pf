@@ -139,7 +139,7 @@ try:
     df = load_csv()
     grouped_data = preprocess_data(df)
 
-    st.write("### Statistical")
+    st.write("### Statistical Overview")
     aggregates = calculate_aggregates(df)
     st.table(pd.DataFrame(aggregates, index=[0]))
     
