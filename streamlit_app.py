@@ -54,9 +54,10 @@ def create_graph(data):
     # Calculate edge thickness (transaction count)
     edge_weights = data.groupby(['from', 'to']).size()
 
-    # Add nodes with sizes (inflow)
-    for node, size in inflow.items():
-        G.add_node(node, size=size)
+    # Add all nodes with default sizes
+    all_addresses = set(data['to']).union(set(data['from']))
+    for address in all_addresses:
+        G.add_node(address, size=inflow.get(address, 0))  # Default size to 0 if no inflow
 
     # Add edges with weights (transaction count)
     for (from_addr, to_addr), weight in edge_weights.items():
@@ -64,12 +65,12 @@ def create_graph(data):
 
     return G
 
-#Function to plot the network graph    
+# Function to plot the network graph
 def plot_graph(G):
     plt.figure(figsize=(12, 12))
 
     # Get node sizes and edge widths
-    node_sizes = [G.nodes[node]['size'] * 10 for node in G.nodes]
+    node_sizes = [G.nodes[node]['size'] * 10 for node in G.nodes]  # Scale sizes for visualization
     edge_widths = [G[u][v]['weight'] for u, v in G.edges]
 
     # Draw the graph
