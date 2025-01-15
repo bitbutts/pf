@@ -36,6 +36,40 @@ def preprocess_data(df):
     grouped_data = df.groupby('date').size().reset_index(name='count')
     return grouped_data
 
+def calculate_aggregates(df):
+    total_addresses = len(set(df['to']).union(set(df['from'])))
+    unique_to_addresses = df['to'].nunique()
+    unique_from_addresses = df['from'].nunique()
+    
+    mean_amount = df['amount'].mean()
+    median_amount = df['amount'].median()
+    min_amount = df['amount'].min()
+    max_amount = df['amount'].max()
+    std_amount = df['amount'].std()
+    total_transaction_volume = df['amount'].sum()
+    
+    total_transactions = len(df)
+    earliest_transaction_date = pd.to_datetime(df['timestamp']).min().date()
+    latest_transaction_date = pd.to_datetime(df['timestamp']).max().date()
+    total_transaction_days = pd.to_datetime(df['timestamp']).dt.date.nunique()
+
+    return {
+        "Total Number of Addresses": total_addresses,
+        "Unique 'to' Addresses": unique_to_addresses,
+        "Unique 'from' Addresses": unique_from_addresses,
+        "Mean Transaction Amount": mean_amount,
+        "Median Transaction Amount": median_amount,
+        "Minimum Transaction Amount": min_amount,
+        "Maximum Transaction Amount": max_amount,
+        "Standard Deviation of Amount": std_amount,
+        "Total Transaction Volume": total_transaction_volume,
+        "Total Transactions": total_transactions,
+        "Earliest Transaction Date": earliest_transaction_date,
+        "Latest Transaction Date": latest_transaction_date,
+        "Total Transaction Days": total_transaction_days,
+    }
+
+
 # Function to create the bar chart
 def create_barchart(data):
     fig, ax = plt.subplots()
@@ -98,21 +132,22 @@ def plot_graph(G, node_scale=0.000008, edge_scale=0.000000003, spacing_factor=5)
     st.pyplot(plt)
     
 # Streamlit app
-st.title("Transaction Bar Chart")
+st.title("PFT Transactions Last 30 days")
 
 # Load the CSV file
 try:
     df = load_csv()
     grouped_data = preprocess_data(df)
 
-    st.write("### Processed Data")
-    st.dataframe(grouped_data)
-
-    st.write("### Bar Chart")
+    st.write("### Statistical")
+    aggregates = calculate_aggregates(df)
+    st.table(pd.DataFrame(aggregates, index=[0]))
+    
+    st.write("### Daily Transactions")
     bar_chart = create_barchart(grouped_data)
     st.pyplot(bar_chart)
 
-    st.write("## Network Graph of Address Relationships")
+    st.write("### Network Graph of Address Relationships")
     G = create_graph(df)
     plot_graph(G)
 
