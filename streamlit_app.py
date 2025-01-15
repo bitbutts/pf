@@ -1,5 +1,6 @@
 import subprocess
 subprocess.run(["pip", "install", "requests"])
+subprocess.run(["pip", "install", "networkx"])
 import requests
 import streamlit as st
 import pandas as pd
