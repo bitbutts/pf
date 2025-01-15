@@ -138,7 +138,7 @@ def fetch_account_transactions(account, ledger_index_min, limit=50, marker=None)
             
             # Rate limit handling: If we get 503, wait and retry
             if response.status_code == 503:
-                print("[WARN] Rate limit (HTTP 503). Sleeping and retrying...")
+                #print("[WARN] Rate limit (HTTP 503). Sleeping and retrying...")
                 time.sleep(RATE_LIMIT_PAUSE_SECONDS)
                 continue
             
@@ -154,10 +154,10 @@ def fetch_account_transactions(account, ledger_index_min, limit=50, marker=None)
 
         except requests.exceptions.RequestException as e:
             # Network or timeout error, you may also want to retry
-            print(f"[ERROR] {e}. Retrying in {RATE_LIMIT_PAUSE_SECONDS} seconds...")
+            #print(f"[ERROR] {e}. Retrying in {RATE_LIMIT_PAUSE_SECONDS} seconds...")
             time.sleep(RATE_LIMIT_PAUSE_SECONDS)
         except json.JSONDecodeError:
-            print("[ERROR] Could not decode JSON from server. Retrying...")
+            #print("[ERROR] Could not decode JSON from server. Retrying...")
             time.sleep(RATE_LIMIT_PAUSE_SECONDS)
 
 # ------------------------------------------------------------------------------
@@ -188,8 +188,8 @@ def main():
     if not file_exists:
         csv_writer.writerow(["timestamp", "from", "to", "amount", "memo", "ledger_index"])
 
-    print(f"[INFO] Fetching last {DAYS_TO_FETCH} days of transactions for {ACCOUNT_TO_CHECK}")
-    print(f"[INFO] Looking for Payment transactions of '{CURRENCY_CODE}' from issuer '{ISSUER_ADDRESS}'")
+    #print(f"[INFO] Fetching last {DAYS_TO_FETCH} days of transactions for {ACCOUNT_TO_CHECK}")
+    #print(f"[INFO] Looking for Payment transactions of '{CURRENCY_CODE}' from issuer '{ISSUER_ADDRESS}'")
 
     # We'll just start from ledger_index_min = -1 (which means earliest),
     # but we will STOP as soon as we see a transaction older than 30 days.
@@ -257,7 +257,7 @@ def main():
 
         if stop_fetching:
             # We've encountered older transactions beyond 30 days
-            print("[INFO] We've reached transactions older than our 30-day cutoff. Stopping.")
+            #print("[INFO] We've reached transactions older than our 30-day cutoff. Stopping.")
             break
 
         if not marker:
@@ -265,7 +265,7 @@ def main():
             break
 
     csv_file.close()
-    print("[INFO] Done. Data appended to CSV:", OUTPUT_CSV_FILENAME)
+    #print("[INFO] Done. Data appended to CSV:", OUTPUT_CSV_FILENAME)
 
 
 if __name__ == "__main__":
