@@ -1,4 +1,6 @@
 import subprocess
+subprocess.run(["pip", "install", "requests"])
+import requests
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
