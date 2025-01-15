@@ -8,8 +8,7 @@ import matplotlib.pyplot as plt
 import networkx as nx
 import os
 
-installed_packages = subprocess.run(["pip", "freeze"], capture_output=True, text=True)
-st.text("Installed Packages:\n" + installed_packages.stdout)
+
 # Run main.py if CSV does not exist
 if not os.path.exists("xrp_token_payments.csv"):
     try:
