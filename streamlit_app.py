@@ -74,7 +74,7 @@ def calculate_aggregates(df):
 def create_barchart(data):
     fig, ax = plt.subplots()
     ax.bar(data['date'], data['count'])
-    ax.set_title("Count of Rows by Date")
+    ax.set_title("Transaction Count by Date")
     ax.set_xlabel("Date")
     ax.set_ylabel("Count")
     plt.xticks(rotation=45)
@@ -127,7 +127,7 @@ def plot_graph(G, node_scale=0.000008, edge_scale=0.000000003, spacing_factor=5)
     nx.draw_networkx_nodes(G, pos, node_size=node_sizes, node_color="skyblue", alpha=0.8)
     nx.draw_networkx_edges(G, pos, width=1, alpha=0.5)
 
-    plt.title("Network Graph of Address Relationships", fontsize=16)
+    #plt.title("Network Graph of Address Relationships", fontsize=16)
     plt.axis("off")
     st.pyplot(plt)
     
