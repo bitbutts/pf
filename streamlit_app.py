@@ -12,7 +12,7 @@ if not os.path.exists("xrp_token_payments.csv"):
 # Function to load the CSV file
 @st.cache_data
 def load_csv():
-    return pd.read_csv("transactions.csv")
+    return pd.read_csv("xrp_token_payments.csv")
 
 # Function to preprocess the data
 def preprocess_data(df):
