@@ -56,7 +56,7 @@ def create_graph(data):
     inflow = data.groupby('to')['amount'].sum()
 
     # Calculate edge thickness (transaction count)
-    edge_weights = data.groupby(['from', 'to']).size()
+    edge_weights = data.groupby(['from', 'to'])['amount'].sum()
 
     # Add all nodes with default sizes
     all_addresses = set(data['to']).union(set(data['from']))
@@ -70,7 +70,7 @@ def create_graph(data):
     return G
 
 # Function to plot the graph with adjustable node and edge sizes
-def plot_graph(G, node_scale=10, edge_scale=1):
+def plot_graph(G, node_scale=0.000002, edge_scale=0.000000003):
     """
     Plots a network graph with adjustable node sizes and edge widths.
 
@@ -89,7 +89,7 @@ def plot_graph(G, node_scale=10, edge_scale=1):
     pos = nx.spring_layout(G, seed=42)
     nx.draw_networkx_nodes(G, pos, node_size=node_sizes, node_color="skyblue", alpha=0.8)
     nx.draw_networkx_edges(G, pos, width=edge_widths, alpha=0.5)
-    nx.draw_networkx_labels(G, pos, font_size=8, font_color="black")
+    #nx.draw_networkx_labels(G, pos, font_size=8, font_color="black")
 
     plt.title("Network Graph of Address Relationships", fontsize=16)
     plt.axis("off")
