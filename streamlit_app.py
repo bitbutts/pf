@@ -41,7 +41,29 @@ def create_barchart(data):
     ax.set_ylabel("Count")
     plt.xticks(rotation=45)
     return fig
-    
+
+
+# Function to create the network graph
+def create_graph(data):
+    # Create a directed graph
+    G = nx.DiGraph()
+
+    # Calculate inflows for node size
+    inflow = data.groupby('to')['amount'].sum()
+
+    # Calculate edge thickness (transaction count)
+    edge_weights = data.groupby(['from', 'to']).size()
+
+    # Add nodes with sizes (inflow)
+    for node, size in inflow.items():
+        G.add_node(node, size=size)
+
+    # Add edges with weights (transaction count)
+    for (from_addr, to_addr), weight in edge_weights.items():
+        G.add_edge(from_addr, to_addr, weight=weight)
+
+    return G
+
 #Function to plot the network graph    
 def plot_graph(G):
     plt.figure(figsize=(12, 12))
