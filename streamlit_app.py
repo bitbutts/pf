@@ -26,7 +26,7 @@ if not os.path.exists("xrp_token_payments.csv"):
         st.text(f"Error Output:\n{e.stderr}")
 
 # Function to load the CSV file
-@st.cache_data
+#@st.cache_data
 def load_csv():
     return pd.read_csv("xrp_token_payments.csv")
 
