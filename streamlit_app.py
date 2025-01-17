@@ -116,32 +116,62 @@ def create_graph(data):
     return G
 
 # Function to plot the graph with adjustable node and edge sizes
-def plot_graph(G, node_scale=0.000008, edge_scale=0.000000003, spacing_factor=5):
+def plot_graph(G, 
+               min_node_size=100, max_node_size=2000,
+               min_edge_size=1,   max_edge_size=8,
+               spacing_factor=5):
     """
-    Plots a network graph with adjustable node sizes, edge widths, and node spacing.
+    Plots a network graph with automatically scaled node and edge sizes.
 
     Args:
         G (nx.DiGraph): The directed graph to plot.
-        node_scale (float): Scaling factor for node sizes.
-        edge_scale (float): Scaling factor for edge widths.
+        min_node_size (int): Minimum node size in the plotted graph.
+        max_node_size (int): Maximum node size in the plotted graph.
+        min_edge_size (int): Minimum edge width in the plotted graph.
+        max_edge_size (int): Maximum edge width in the plotted graph.
         spacing_factor (float): Multiplier to control the spacing between nodes.
     """
     plt.figure(figsize=(12, 12))
 
-    # Get scaled node sizes and edge widths
-    node_sizes = [G.nodes[node]['size'] * node_scale for node in G.nodes]
-    edge_widths = [G[u][v]['weight'] * edge_scale for u, v in G.edges]
+    # Helper function to scale values (linear)
+    def linear_scale(values, min_out, max_out):
+        """
+        Scales a list of numeric values to [min_out, max_out] linearly.
+        If all values are the same, all get mid-range. If empty, return [].
+        """
+        if not values:
+            return []
+        min_val = min(values)
+        max_val = max(values)
+        if min_val == max_val:
+            # If all values are the same, set them all to the midpoint.
+            mid = (max_out + min_out) / 2
+            return [mid] * len(values)
+        # Otherwise, linear interpolation for each value:
+        scaled = [
+            min_out + (v - min_val) / (max_val - min_val) * (max_out - min_out)
+            for v in values
+        ]
+        return scaled
 
-    # Calculate node positions with increased spacing
-    pos = nx.spring_layout(G, seed=42, k=spacing_factor / len(G.nodes), iterations=50)
+    # 1) Collect node inflows and edge weights
+    node_inflows = [G.nodes[node]['size'] for node in G.nodes]
+    edge_wts = [G[u][v]['weight'] for u, v in G.edges]
 
-    # Draw the graph
-    nx.draw_networkx_nodes(G, pos, node_size=node_sizes, node_color="skyblue", alpha=0.8)
-    nx.draw_networkx_edges(G, pos, width=1, alpha=0.5)
+    # 2) Auto-scale node sizes and edge widths
+    scaled_node_sizes = linear_scale(node_inflows, min_node_size, max_node_size)
+    scaled_edge_widths = linear_scale(edge_wts, min_edge_size, max_edge_size)
 
-    #plt.title("Network Graph of Address Relationships", fontsize=16)
+    # 3) Calculate node positions with spring layout
+    pos = nx.spring_layout(G, seed=42, k=spacing_factor / max(len(G.nodes), 1), iterations=50)
+
+    # 4) Draw the graph
+    nx.draw_networkx_nodes(G, pos, node_size=scaled_node_sizes, node_color="skyblue", alpha=0.8)
+    nx.draw_networkx_edges(G, pos, width=scaled_edge_widths, alpha=0.5)
+
     plt.axis("off")
     st.pyplot(plt)
+
     
 # Streamlit app
 st.title("PFT Transactions Last 30 days")
