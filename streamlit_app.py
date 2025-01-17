@@ -62,20 +62,20 @@ def calculate_aggregates(df):
         (~df['memo'].str.startswith("REQUEST_POST_FIAT", na=False)) &
         (~df['memo'].str.startswith("PROPOSED PF", na=False)) &
         (~df['memo'].str.startswith("REWARD RESPONSE", na=False)) &
-        (df['amount'] <= 100)
-    ].shape[0]
+        (df['amount'] < 100)
+    ]['to'].nunique()
 
     return {
         "ADDRESS COUNT": total_addresses,
         "MEAN TX VALUE": mean_amount,
-        "TRANSCATION VALUE": total_transaction_volume,
+        "TRANSACTION VOLUME": total_transaction_volume,
         "TRANSACTION COUNT": total_transactions,
-        "REQUEST_POST_FIAT Count": request_post_fiat_count,
+        "INITIATIONS": initiation_reward_count,
         "PROPOSED TASKS": proposed_pf_count,
+        "ACCEPTED TASKS": acceptance_reason_count,
         "COMPLETED TASKS": reward_response_count,
         "TASK REWARDS": reward_response_sum,
-        "ACCEPTANCED TASKS": acceptance_reason_count,
-        "INITIATIONS": initiation_reward_count,
+
     }
 
 
