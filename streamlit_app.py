@@ -9,21 +9,19 @@ import networkx as nx
 import os
 
 
-# Run main.py if CSV does not exist
-if not os.path.exists("xrp_token_payments.csv"):
-    try:
-        st.info("Running transaction_script.py...")
-        result = subprocess.run(
-            ["python", "transaction_script.py"],
-            check=True,
-            text=True,
-            capture_output=True
-        )
-        st.success("Script ran successfully!")
-        st.text("Output:\n" + result.stdout)
-    except subprocess.CalledProcessError as e:
-        st.error("Script failed to run.")
-        st.text(f"Error Output:\n{e.stderr}")
+try:
+    st.info("Running transaction_script.py...")
+    result = subprocess.run(
+        ["python", "transaction_script.py"],
+        check=True,
+        text=True,
+        capture_output=True
+    )
+    st.success("Script ran successfully!")
+    st.text("Output:\n" + result.stdout)
+except subprocess.CalledProcessError as e:
+    st.error("Script failed to run.")
+    st.text(f"Error Output:\n{e.stderr}")
 
 # Function to load the CSV file
 @st.cache_data
