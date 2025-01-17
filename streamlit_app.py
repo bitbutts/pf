@@ -57,28 +57,25 @@ def calculate_aggregates(df):
     reward_response_count = df[df['memo'].str.startswith("REWARD RESPONSE", na=False)].shape[0]
     reward_response_sum = df[df['memo'].str.startswith("REWARD RESPONSE", na=False)]['amount'].sum()
     acceptance_reason_count = df[df['memo'].str.startswith("ACCEPTANCE REASON", na=False)].shape[0]
-    initiation_reward_count = df[df['memo'].str.startswith("INITIATION_REWARD", na=False)].shape[0]
+    initiation_reward_count = df[
+        (df['from'] == 'r4yc85M1hwsegVGZ1pawpZPwj65SVs8PzD') &
+        (~df['memo'].str.startswith("REQUEST_POST_FIAT", na=False)) &
+        (~df['memo'].str.startswith("PROPOSED PF", na=False)) &
+        (~df['memo'].str.startswith("REWARD RESPONSE", na=False)) &
+        (df['amount'] <= 100)
+    ].shape[0]
 
     return {
-        "Total Number of Addresses": total_addresses,
-        "Unique 'to' Addresses": unique_to_addresses,
-        "Unique 'from' Addresses": unique_from_addresses,
-        "Mean Transaction Amount": mean_amount,
-        "Median Transaction Amount": median_amount,
-        "Minimum Transaction Amount": min_amount,
-        "Maximum Transaction Amount": max_amount,
-        "Standard Deviation of Amount": std_amount,
-        "Total Transaction Volume": total_transaction_volume,
-        "Total Transactions": total_transactions,
-        "Earliest Transaction Date": earliest_transaction_date,
-        "Latest Transaction Date": latest_transaction_date,
-        "Total Transaction Days": total_transaction_days,
+        "ADDRESS COUNT": total_addresses,
+        "MEAN TX VALUE": mean_amount,
+        "TRANSCATION VALUE": total_transaction_volume,
+        "TRANSACTION COUNT": total_transactions,
         "REQUEST_POST_FIAT Count": request_post_fiat_count,
-        "PROPOSED PF Count": proposed_pf_count,
-        "REWARD RESPONSE Count": reward_response_count,
-        "REWARD RESPONSE Sum": reward_response_sum,
-        "ACCEPTANCE REASON Count": acceptance_reason_count,
-        "INITIATION_REWARD Count": initiation_reward_count,
+        "PROPOSED TASKS": proposed_pf_count,
+        "COMPLETED TASKS": reward_response_count,
+        "TASK REWARDS": reward_response_sum,
+        "ACCEPTANCED TASKS": acceptance_reason_count,
+        "INITIATIONS": initiation_reward_count,
     }
 
 
