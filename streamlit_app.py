@@ -62,7 +62,10 @@ def calculate_aggregates(df):
         (~df['memo'].str.startswith("REQUEST_POST_FIAT", na=False)) &
         (~df['memo'].str.startswith("PROPOSED PF", na=False)) &
         (~df['memo'].str.startswith("REWARD RESPONSE", na=False)) &
-        (df['amount'] < 100)
+        (~df['memo'].str.startswith("VERIFICATION PROMPT", na=False)) &
+        (~df['memo'].str.startswith("Corbanu Reward", na=False)) &
+        (~df['memo'].str.startswith("Initial PFT Grant Post Initiation", na=False)) &
+        (df['amount'] <= 100)
     ]['to'].nunique()
 
     return {
