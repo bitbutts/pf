@@ -52,6 +52,13 @@ def calculate_aggregates(df):
     latest_transaction_date = pd.to_datetime(df['timestamp']).max().date()
     total_transaction_days = pd.to_datetime(df['timestamp']).dt.date.nunique()
 
+    request_post_fiat_count = df[df['memo'].str.startswith("REQUEST_POST_FIAT", na=False)].shape[0]
+    proposed_pf_count = df[df['memo'].str.startswith("PROPOSED PF", na=False)].shape[0]
+    reward_response_count = df[df['memo'].str.startswith("REWARD RESPONSE", na=False)].shape[0]
+    reward_response_sum = df[df['memo'].str.startswith("REWARD RESPONSE", na=False)]['amount'].sum()
+    acceptance_reason_count = df[df['memo'].str.startswith("ACCEPTANCE REASON", na=False)].shape[0]
+    initiation_reward_count = df[df['memo'].str.startswith("INITIATION_REWARD", na=False)].shape[0]
+
     return {
         "Total Number of Addresses": total_addresses,
         "Unique 'to' Addresses": unique_to_addresses,
@@ -66,6 +73,12 @@ def calculate_aggregates(df):
         "Earliest Transaction Date": earliest_transaction_date,
         "Latest Transaction Date": latest_transaction_date,
         "Total Transaction Days": total_transaction_days,
+        "REQUEST_POST_FIAT Count": request_post_fiat_count,
+        "PROPOSED PF Count": proposed_pf_count,
+        "REWARD RESPONSE Count": reward_response_count,
+        "REWARD RESPONSE Sum": reward_response_sum,
+        "ACCEPTANCE REASON Count": acceptance_reason_count,
+        "INITIATION_REWARD Count": initiation_reward_count,
     }
 
 
