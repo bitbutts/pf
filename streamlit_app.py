@@ -189,13 +189,16 @@ try:
         st.write("### Initiations vs. Completed Tasks by Day")
 
         # 1) Filter Initiations (using your special condition)
-        df_initiations = df_filtered[
-            (df_filtered['from'] == 'r4yc85M1hwsegVGZ1pawpZPwj65SVs8PzD') &
-            (~df_filtered['memo'].str.startswith("REQUEST_POST_FIAT", na=False)) &
-            (~df_filtered['memo'].str.startswith("PROPOSED PF", na=False)) &
-            (~df_filtered['memo'].str.startswith("REWARD RESPONSE", na=False)) &
-            (df_filtered['amount'] < 100)
-        ]
+        df_initiations = df[
+        (df['from'] == 'r4yc85M1hwsegVGZ1pawpZPwj65SVs8PzD') &
+        (~df['memo'].str.startswith("REQUEST_POST_FIAT", na=False)) &
+        (~df['memo'].str.startswith("PROPOSED PF", na=False)) &
+        (~df['memo'].str.startswith("REWARD RESPONSE", na=False)) &
+        (~df['memo'].str.startswith("VERIFICATION PROMPT", na=False)) &
+        (~df['memo'].str.startswith("Corbanu Reward", na=False)) &
+        (~df['memo'].str.startswith("Initial PFT Grant Post Initiation", na=False)) &
+        (df['amount'] <= 100)
+    ]['to'].nunique()
 
         # Group initiations by day (distinct 'to')
         initiations_by_day = (
