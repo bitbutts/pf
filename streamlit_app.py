@@ -189,7 +189,7 @@ try:
         st.write("### Initiations vs. Completed Tasks by Day")
 
         # 1) Filter Initiations (using your special condition)
-        df_initiations = df_filtered[[
+        df_initiations = df_filtered[
         (df['from'] == 'r4yc85M1hwsegVGZ1pawpZPwj65SVs8PzD') &
         (~df['memo'].str.startswith("REQUEST_POST_FIAT", na=False)) &
         (~df['memo'].str.startswith("PROPOSED PF", na=False)) &
