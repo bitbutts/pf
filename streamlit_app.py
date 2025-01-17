@@ -159,7 +159,7 @@ try:
     )
 
     # Validate date input
-    if start_date > end_date:
+    if start_date >= end_date:
         st.error("Start date must be before end date.")
     else:
         # Filter data within selected date range
