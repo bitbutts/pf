@@ -5,7 +5,6 @@ import os
 import base64
 import binascii
 import datetime
-import time
 
 # ------------------------------------------------------------------------------
 # Configuration
@@ -23,17 +22,63 @@ ACCOUNT_TO_CHECK = ISSUER_ADDRESS
 # Output CSV filename
 OUTPUT_CSV_FILENAME = "xrp_token_payments.csv"
 
-# How many transactions to fetch per batch
-BATCH_LIMIT = 500
-
-# If you hit rate limits, how long to wait (seconds) before retrying
-RATE_LIMIT_PAUSE_SECONDS = 30
-
-# Only fetch transactions from the last X days
-DAYS_TO_FETCH = 30
+# “State” file to remember the last processed ledger index
+LAST_LEDGER_INDEX_FILE = "last_ledger_index.txt"
 
 # ------------------------------------------------------------------------------
-# Helpers
+# Helpers to fetch and filter transactions
+# ------------------------------------------------------------------------------
+
+def fetch_account_transactions(account, ledger_index_min, limit=50, marker=None):
+    """
+    Fetch transactions for a given account using the 'account_tx' method
+    from the XRPL JSON RPC. Returns (transactions, marker).
+
+    - ledger_index_min: the minimum ledger index to start from
+    - marker: for pagination
+    """
+    request_body = {
+        "method": "account_tx",
+        "params": [
+            {
+                "account": account,
+                "ledger_index_min": ledger_index_min,
+                "ledger_index_max": -1,  # no upper limit
+                "limit": limit
+            }
+        ]
+    }
+    if marker:
+        request_body["params"][0]["marker"] = marker
+
+    response = requests.post(XRPL_RPC_URL, json=request_body, timeout=20)
+    response_json = response.json()
+
+    if "result" not in response_json:
+        raise Exception(f"Unexpected response: {response_json}")
+
+    result = response_json["result"]
+    txs = result.get("transactions", [])
+    next_marker = result.get("marker", None)
+
+    return txs, next_marker
+
+def is_token_payment(tx, currency_code, issuer):
+    """
+    Check if a Payment transaction involves the specified token (IOU).
+    """
+    if tx.get("TransactionType") != "Payment":
+        return False
+    amount = tx.get("Amount")
+    # For an IOU Payment, 'Amount' is a dictionary with 'currency', 'issuer', 'value'.
+    if isinstance(amount, dict):
+        if (amount.get("issuer") == issuer and
+            amount.get("currency") == currency_code):
+            return True
+    return False
+
+# ------------------------------------------------------------------------------
+# Memo decoding
 # ------------------------------------------------------------------------------
 
 def decode_hex_or_base64(encoded_str):
@@ -70,12 +115,20 @@ def extract_memos(transaction):
     decoded_memos = []
     for memo_entry in memos:
         memo = memo_entry.get("Memo", {})
-        memo_data = decode_hex_or_base64(memo.get("MemoData", ""))   # main content
-        # You could also decode MemoType / MemoFormat, if needed
-        decoded_memos.append(memo_data)
+        memo_type   = decode_hex_or_base64(memo.get("MemoType", ""))   # optional
+        memo_format = decode_hex_or_base64(memo.get("MemoFormat", "")) # optional
+        memo_data   = decode_hex_or_base64(memo.get("MemoData", ""))   # main content
+        # Combine them in some sensible way. Here, we'll just store the data.
+        # You could also include type/format if desired.
+        combined = memo_data
+        decoded_memos.append(combined)
 
-    # Join multiple memos with a newline (or choose another separator)
+    # Join multiple memos with a separator (e.g. newline or semicolon)
     return "\n".join(decoded_memos)
+
+# ------------------------------------------------------------------------------
+# Date/Time Handling
+# ------------------------------------------------------------------------------
 
 def ripple_to_unix_time(ripple_time):
     """
@@ -92,157 +145,80 @@ def format_ripple_timestamp(ripple_time):
     unix_timestamp = ripple_to_unix_time(ripple_time)
     return datetime.datetime.utcfromtimestamp(unix_timestamp).strftime('%Y-%m-%d %H:%M:%S')
 
-def is_token_payment(tx, currency_code, issuer):
-    """
-    Check if a Payment transaction involves the specified token (IOU).
-    """
-    if tx.get("TransactionType") != "Payment":
-        return False
-    amount = tx.get("Amount")
-    # For an IOU Payment, 'Amount' is a dict with 'currency', 'issuer', 'value'.
-    if isinstance(amount, dict):
-        if (amount.get("issuer") == issuer and
-            amount.get("currency") == currency_code):
-            return True
-    return False
-
-# ------------------------------------------------------------------------------
-# Fetch from XRPL (with rate-limit handling)
-# ------------------------------------------------------------------------------
-
-def fetch_account_transactions(account, ledger_index_min, limit=50, marker=None):
-    """
-    Fetch transactions for a given account using the 'account_tx' method
-    from the XRPL JSON RPC. Returns (transactions, marker).
-
-    - ledger_index_min: the minimum ledger index to start from
-    - marker: for pagination
-    """
-    request_body = {
-        "method": "account_tx",
-        "params": [
-            {
-                "account": account,
-                "ledger_index_min": ledger_index_min,
-                "ledger_index_max": -1,  # no upper limit
-                "limit": limit
-            }
-        ]
-    }
-    if marker:
-        request_body["params"][0]["marker"] = marker
-
-    while True:
-        try:
-            response = requests.post(XRPL_RPC_URL, json=request_body, timeout=20)
-            
-            # Rate limit handling: If we get 503, wait and retry
-            if response.status_code == 503:
-                #print("[WARN] Rate limit (HTTP 503). Sleeping and retrying...")
-                time.sleep(RATE_LIMIT_PAUSE_SECONDS)
-                continue
-            
-            response_json = response.json()
-            
-            if "result" not in response_json:
-                raise Exception(f"Unexpected response: {response_json}")
-
-            result = response_json["result"]
-            txs = result.get("transactions", [])
-            next_marker = result.get("marker", None)
-            return txs, next_marker
-
-        except requests.exceptions.RequestException as e:
-            # Network or timeout error, you may also want to retry
-            #print(f"[ERROR] {e}. Retrying in {RATE_LIMIT_PAUSE_SECONDS} seconds...")
-            time.sleep(RATE_LIMIT_PAUSE_SECONDS)
-        except json.JSONDecodeError:
-            #print("[ERROR] Could not decode JSON from server. Retrying...")
-            time.sleep(RATE_LIMIT_PAUSE_SECONDS)
-
 # ------------------------------------------------------------------------------
 # Main
 # ------------------------------------------------------------------------------
 
 def main():
-    """
-    Main routine:
-      - Determine a 30-day-ago cutoff time (UTC).
-      - Fetch transactions in descending order (newest first).
-      - Stop when we reach transactions older than 30 days.
-      - Write matching transactions to CSV.
-    """
+    # 1) Read last processed ledger index (if file exists)
+    if os.path.exists(LAST_LEDGER_INDEX_FILE):
+        with open(LAST_LEDGER_INDEX_FILE, "r") as f:
+            last_ledger_index = int(f.read().strip())
+        ledger_index_min = last_ledger_index + 1
+        print(f"Resuming from ledger_index > {last_ledger_index}")
+    else:
+        ledger_index_min = -1  # means no lower bound
+        print("No last ledger index file found. Fetching all ledgers (this might be large).")
 
-    # Calculate the oldest allowed Unix timestamp
-    # so we only process transactions from the last X days.
-    now_utc = datetime.datetime.utcnow()
-    cutoff_utc = now_utc - datetime.timedelta(days=DAYS_TO_FETCH)
-    cutoff_unix = cutoff_utc.timestamp()
-
-    # We'll open the CSV in append mode (or create if it doesn't exist).
+    # 2) Prepare CSV writer (append mode). If file doesn’t exist, write header.
     file_exists = os.path.isfile(OUTPUT_CSV_FILENAME)
     csv_file = open(OUTPUT_CSV_FILENAME, "a", newline="", encoding="utf-8")
     csv_writer = csv.writer(csv_file)
 
-    # If file did not exist, write header
     if not file_exists:
         csv_writer.writerow(["timestamp", "from", "to", "amount", "memo", "ledger_index"])
 
-    #print(f"[INFO] Fetching last {DAYS_TO_FETCH} days of transactions for {ACCOUNT_TO_CHECK}")
-    #print(f"[INFO] Looking for Payment transactions of '{CURRENCY_CODE}' from issuer '{ISSUER_ADDRESS}'")
+    # 3) Fetch & filter transactions
+    print(f"Fetching transactions for account: {ACCOUNT_TO_CHECK}")
+    print(f"Filtering for Payment transactions of token '{CURRENCY_CODE}' from issuer {ISSUER_ADDRESS}\n")
 
-    # We'll just start from ledger_index_min = -1 (which means earliest),
-    # but we will STOP as soon as we see a transaction older than 30 days.
-    ledger_index_min = -1
     marker = None
+    highest_ledger_this_run = ledger_index_min
 
-    # Because account_tx returns transactions in descending order (newest first),
-    # we can break out of the loop as soon as we hit anything older than the cutoff.
     while True:
+        # Fetch one batch
         transactions_batch, marker = fetch_account_transactions(
             account=ACCOUNT_TO_CHECK,
             ledger_index_min=ledger_index_min,
-            limit=BATCH_LIMIT,
             marker=marker
         )
-        
-        if not transactions_batch:
-            # No more transactions in this range
-            break
-
-        stop_fetching = False
 
         for entry in transactions_batch:
             tx = entry.get("tx", {})
+            meta = entry.get("meta", {})
             ledger_index = tx.get("ledger_index", 0)
 
-            # Convert XRPL "date" to Unix epoch
-            ripple_time = tx.get("date")  # Ripple epoch
-            if ripple_time is None:
-                # Some transactions might not have a date (very rare), skip them
-                continue
-            
-            tx_unix_time = ripple_to_unix_time(ripple_time)
-            # If transaction is older than our cutoff, we can stop entirely
-            if tx_unix_time < cutoff_unix:
-                stop_fetching = True
-                break
+            # Track highest ledger index we see, so we can save it later
+            if ledger_index > highest_ledger_this_run:
+                highest_ledger_this_run = ledger_index
 
-            # Now check if it's a Payment for our specific IOU
+            # Only handle Payment transactions that match our token
             if is_token_payment(tx, CURRENCY_CODE, ISSUER_ADDRESS):
-                # Prepare CSV fields
-                timestamp_str = format_ripple_timestamp(ripple_time)
+                # Extract data
                 from_addr = tx.get("Account", "")
                 to_addr = tx.get("Destination", "")
-
-                amount_field = tx.get("Amount", {})
-                if isinstance(amount_field, dict):
-                    value_str = amount_field.get("value", "0")
+                amount = tx.get("Amount", {})
+                # If it's an IOU, amount is a dict: {currency, issuer, value}
+                # For a Payment in IOU, "value" is the actual numeric amount
+                if isinstance(amount, dict):
+                    value_str = amount.get("value", "0")
                 else:
-                    value_str = str(amount_field)  # Could be XRP in drops
+                    # If it were XRP, it's in drops as a string.
+                    # But theoretically, we won't be here if it's not our IOU.
+                    value_str = amount
 
+                # Convert the Ripple "date" (ledger close time) to a human-readable string
+                # "date" is the ledger time in seconds since 1/1/2000
+                ripple_time = tx.get("date")
+                if ripple_time is not None:
+                    timestamp_str = format_ripple_timestamp(ripple_time)
+                else:
+                    timestamp_str = ""
+
+                # Get memos
                 memo_str = extract_memos(tx)
 
+                # Write a row to CSV
                 csv_writer.writerow([
                     timestamp_str,
                     from_addr,
@@ -252,21 +228,21 @@ def main():
                     ledger_index
                 ])
 
-        # Important: flush after each batch so we don't lose partial results
-        csv_file.flush()
-
-        if stop_fetching:
-            # We've encountered older transactions beyond 30 days
-            #print("[INFO] We've reached transactions older than our 30-day cutoff. Stopping.")
-            break
-
+        # Pagination check
         if not marker:
-            # No more pages left
+            # No more pages
             break
 
     csv_file.close()
-    #print("[INFO] Done. Data appended to CSV:", OUTPUT_CSV_FILENAME)
 
+    # 4) Store the new highest ledger index so next run starts after this
+    if highest_ledger_this_run > 0:
+        with open(LAST_LEDGER_INDEX_FILE, "w") as f:
+            f.write(str(highest_ledger_this_run))
+
+    print("Done.")
+    print(f"Last processed ledger index: {highest_ledger_this_run}")
+    print(f"Data appended to CSV: {OUTPUT_CSV_FILENAME}")
 
 if __name__ == "__main__":
     main()
