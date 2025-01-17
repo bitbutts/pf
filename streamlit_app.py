@@ -183,7 +183,7 @@ try:
         aggregates = calculate_aggregates(df_filtered)
         st.table(pd.DataFrame(aggregates, index=[0]))
 
-                st.write("### Initiations vs. Completed Tasks by Day")
+        st.write("### Initiations vs. Completed Tasks by Day")
 
         # 1) Filter Initiations (using your special condition)
         df_initiations = df_filtered[
