@@ -67,9 +67,9 @@ def calculate_aggregates(df):
 
     return {
         "ADDRESS COUNT": total_addresses,
-        "MEAN TX VALUE": mean_amount,
-        "TRANSACTION VOLUME": total_transaction_volume,
         "TRANSACTION COUNT": total_transactions,
+        "TRANSACTION VOLUME": total_transaction_volume,
+        "MEAN TX VALUE": mean_amount,
         "INITIATIONS": initiation_reward_count,
         "PROPOSED TASKS": proposed_pf_count,
         "ACCEPTED TASKS": acceptance_reason_count,
@@ -183,10 +183,52 @@ try:
         aggregates = calculate_aggregates(df_filtered)
         st.table(pd.DataFrame(aggregates, index=[0]))
 
+                st.write("### Initiations vs. Completed Tasks by Day")
+
+        # 1) Filter Initiations (using your special condition)
+        df_initiations = df_filtered[
+            (df_filtered['from'] == 'r4yc85M1hwsegVGZ1pawpZPwj65SVs8PzD') &
+            (~df_filtered['memo'].str.startswith("REQUEST_POST_FIAT", na=False)) &
+            (~df_filtered['memo'].str.startswith("PROPOSED PF", na=False)) &
+            (~df_filtered['memo'].str.startswith("REWARD RESPONSE", na=False)) &
+            (df_filtered['amount'] < 100)
+        ]
+
+        # Group initiations by day (distinct 'to')
+        initiations_by_day = (
+            df_initiations
+            .groupby('date')['to']
+            .nunique()
+            .reset_index(name='initiations_count')
+        )
+
+        # 2) Filter Completed Tasks
+        df_completed = df_filtered[df_filtered['memo'].str.startswith("REWARD RESPONSE", na=False)]
+
+        # Group completed tasks by day (count how many)
+        completed_by_day = (
+            df_completed
+            .groupby('date')
+            .size()
+            .reset_index(name='completed_count')
+        )
+
+        # 3) Merge both on date, fill missing days with 0
+        df_line = pd.merge(
+            initiations_by_day,
+            completed_by_day,
+            on='date',
+            how='outer'
+        ).fillna(0)
+
+        # 4) Create one line chart with two lines
+        df_line_chart = df_line.set_index('date')[['initiations_count', 'completed_count']]
+        st.line_chart(data=df_line_chart, height=400)
+        """
         st.write("### Daily Transactions")
         bar_chart = create_barchart(grouped_data)
         st.pyplot(bar_chart)
-
+        """
         st.write("### Network Graph of Address Relationships")
         G = create_graph(df_filtered)
         plot_graph(G)
