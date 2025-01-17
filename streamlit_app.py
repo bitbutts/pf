@@ -66,7 +66,7 @@ def calculate_aggregates(df):
         (~df['memo'].str.startswith("Corbanu Reward", na=False)) &
         (~df['memo'].str.startswith("Initial PFT Grant Post Initiation", na=False)) &
         (df['amount'] <= 100)
-    ]['to'].nunique()
+    ]
 
     return {
         "ADDRESS COUNT": total_addresses,
