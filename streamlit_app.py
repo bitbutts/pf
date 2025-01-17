@@ -7,6 +7,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import networkx as nx
 import os
+import datetime
 
 
 try:
@@ -135,19 +136,50 @@ st.title("PFT Transactions Last 30 days")
 # Load the CSV file
 try:
     df = load_csv()
-    grouped_data = preprocess_data(df)
-
-    st.write("### Statistical Overview")
-    aggregates = calculate_aggregates(df)
-    st.table(pd.DataFrame(aggregates, index=[0]))
     
-    st.write("### Daily Transactions")
-    bar_chart = create_barchart(grouped_data)
-    st.pyplot(bar_chart)
+    # Convert timestamp column to datetime for filtering
+    df['timestamp'] = pd.to_datetime(df['timestamp'])
 
-    st.write("### Network Graph of Address Relationships")
-    G = create_graph(df)
-    plot_graph(G)
+    # Calculate a default 30-day range ending yesterday
+    default_end_date = datetime.date.today() - datetime.timedelta(days=1)
+    default_start_date = default_end_date - datetime.timedelta(days=29)
+
+    # Date selection with default values
+    start_date = st.date_input(
+        "Start Date",
+        value=default_start_date,
+        min_value=df['timestamp'].min().date(),
+        max_value=df['timestamp'].max().date()
+    )
+    end_date = st.date_input(
+        "End Date",
+        value=default_end_date,
+        min_value=df['timestamp'].min().date(),
+        max_value=df['timestamp'].max().date()
+    )
+
+    # Validate date input
+    if start_date > end_date:
+        st.error("Start date must be before end date.")
+    else:
+        # Filter data within selected date range
+        mask = (df['timestamp'].dt.date >= start_date) & (df['timestamp'].dt.date <= end_date)
+        df_filtered = df[mask]
+
+        # Preprocess and visualize
+        grouped_data = preprocess_data(df_filtered)
+
+        st.write("### Statistical Overview")
+        aggregates = calculate_aggregates(df_filtered)
+        st.table(pd.DataFrame(aggregates, index=[0]))
+
+        st.write("### Daily Transactions")
+        bar_chart = create_barchart(grouped_data)
+        st.pyplot(bar_chart)
+
+        st.write("### Network Graph of Address Relationships")
+        G = create_graph(df_filtered)
+        plot_graph(G)
 
 except FileNotFoundError:
     st.error("The file 'transactions.csv' could not be found or generated.")
