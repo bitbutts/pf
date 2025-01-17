@@ -198,7 +198,7 @@ try:
         (~df['memo'].str.startswith("Corbanu Reward", na=False)) &
         (~df['memo'].str.startswith("Initial PFT Grant Post Initiation", na=False)) &
         (df['amount'] <= 100)
-    ]['to'].nunique()
+    ]
 
         # Group initiations by day (distinct 'to')
         initiations_by_day = (
