@@ -1,6 +1,6 @@
 import subprocess
-subprocess.run(["pip", "install", "requests"])
-subprocess.run(["pip", "install", "networkx"])
+import requests
+import networkx
 import requests
 import streamlit as st
 import pandas as pd
@@ -10,8 +10,22 @@ import os
 import datetime
 
 conn = st.connection("neon", type="sql")
-st.write("connection successfull")
 
+def fetch_data():
+    try:
+        # Example query: replace `your_table` with an actual table
+        query = "SELECT * FROM pft_transactions;"
+        
+        # Execute the query; returns a list of dicts by default
+        result = conn.query(query, ttl=600)  
+        
+        # Convert the result to a pandas DataFrame
+        df = pd.DataFrame(result)
+        return df
+    except Exception as e:
+        st.error(f"Error fetching data: {e}")
+        return pd.DataFrame()
+"""
 try:
     st.info("Running transaction_script.py...")
     result = subprocess.run(
@@ -25,7 +39,7 @@ try:
 except subprocess.CalledProcessError as e:
     st.error("Script failed to run.")
     st.text(f"Error Output:\n{e.stderr}")
-
+"""
 # Function to load the CSV file
 @st.cache_data
 def load_csv():
@@ -33,14 +47,14 @@ def load_csv():
 
 # Function to preprocess the data
 def preprocess_data(df):
-    df['date'] = pd.to_datetime(df['timestamp']).dt.date
+    df['date'] = pd.to_datetime(df['transaction_timestamp']).dt.date
     grouped_data = df.groupby('date').size().reset_index(name='count')
     return grouped_data
 
 def calculate_aggregates(df):
-    total_addresses = len(set(df['to']).union(set(df['from'])))
-    unique_to_addresses = df['to'].nunique()
-    unique_from_addresses = df['from'].nunique()
+    total_addresses = len(set(df['to_address']).union(set(df['from_address'])))
+    unique_to_addresses = df['to_address'].nunique()
+    unique_from_addresses = df['from_address'].nunique()
     
     mean_amount = df['amount'].mean()
     median_amount = df['amount'].median()
@@ -50,9 +64,9 @@ def calculate_aggregates(df):
     total_transaction_volume = df['amount'].sum()
     
     total_transactions = len(df)
-    earliest_transaction_date = pd.to_datetime(df['timestamp']).min().date()
-    latest_transaction_date = pd.to_datetime(df['timestamp']).max().date()
-    total_transaction_days = pd.to_datetime(df['timestamp']).dt.date.nunique()
+    earliest_transaction_date = pd.to_datetime(df['transaction_timestamp']).min().date()
+    latest_transaction_date = pd.to_datetime(df['transaction_timestamp']).max().date()
+    total_transaction_days = pd.to_datetime(df['transaction_timestamp']).dt.date.nunique()
 
     request_post_fiat_count = df[df['memo'].str.startswith("REQUEST_POST_FIAT", na=False)].shape[0]
     proposed_pf_count = df[df['memo'].str.startswith("PROPOSED PF", na=False)].shape[0]
@@ -60,7 +74,7 @@ def calculate_aggregates(df):
     reward_response_sum = df[df['memo'].str.startswith("REWARD RESPONSE", na=False)]['amount'].sum()
     acceptance_reason_count = df[df['memo'].str.startswith("ACCEPTANCE REASON", na=False)].shape[0]
     initiation_reward_count = df[
-        (df['from'] == 'r4yc85M1hwsegVGZ1pawpZPwj65SVs8PzD') &
+        (df['from_address'] == 'r4yc85M1hwsegVGZ1pawpZPwj65SVs8PzD') &
         (~df['memo'].str.startswith("REQUEST_POST_FIAT", na=False)) &
         (~df['memo'].str.startswith("PROPOSED PF", na=False)) &
         (~df['memo'].str.startswith("REWARD RESPONSE", na=False)) &
@@ -68,7 +82,7 @@ def calculate_aggregates(df):
         (~df['memo'].str.startswith("Corbanu Reward", na=False)) &
         (~df['memo'].str.startswith("Initial PFT Grant Post Initiation", na=False)) &
         (df['amount'] <= 100)
-    ]['to'].nunique()
+    ]['to_address'].nunique()
 
     return {
         "ADDRESS COUNT": total_addresses,
@@ -101,13 +115,13 @@ def create_graph(data):
     G = nx.DiGraph()
 
     # Calculate inflows for node size
-    inflow = data.groupby('to')['amount'].sum()
+    inflow = data.groupby('to_address')['amount'].sum()
 
     # Calculate edge thickness (transaction count)
-    edge_weights = data.groupby(['from', 'to'])['amount'].sum()
+    edge_weights = data.groupby(['from_address', 'to_address'])['amount'].sum()
 
     # Add all nodes with default sizes
-    all_addresses = set(data['to']).union(set(data['from']))
+    all_addresses = set(data['to_address']).union(set(data['from_address']))
     for address in all_addresses:
         G.add_node(address, size=inflow.get(address, 0))  # Default size to 0 if no inflow
 
@@ -180,10 +194,10 @@ st.title("PFT Transactions Last 30 days")
 
 # Load the CSV file
 try:
-    df = load_csv()
+    df = fetch_data()
     
-    # Convert timestamp column to datetime for filtering
-    df['timestamp'] = pd.to_datetime(df['timestamp'])
+    # Convert transaction_timestamp column to datetime for filtering
+    df['transaction_timestamp'] = pd.to_datetime(df['transaction_timestamp'])
 
     # Calculate a default 30-day range ending yesterday
     default_end_date = datetime.date.today() - datetime.timedelta(days=1)
@@ -193,14 +207,14 @@ try:
     start_date = st.date_input(
         "Start Date",
         value=default_start_date,
-        min_value=df['timestamp'].min().date(),
-        max_value=df['timestamp'].max().date()
+        min_value=df['transaction_timestamp'].min().date(),
+        max_value=df['transaction_timestamp'].max().date()
     )
     end_date = st.date_input(
         "End Date",
         value=default_end_date,
-        min_value=df['timestamp'].min().date(),
-        max_value=df['timestamp'].max().date()
+        min_value=df['transaction_timestamp'].min().date(),
+        max_value=df['transaction_timestamp'].max().date()
     )
 
     # Validate date input
@@ -208,7 +222,7 @@ try:
         st.error("Start date must be before end date.")
     else:
         # Filter data within selected date range
-        mask = (df['timestamp'].dt.date >= start_date) & (df['timestamp'].dt.date <= end_date)
+        mask = (df['transaction_timestamp'].dt.date >= start_date) & (df['transaction_timestamp'].dt.date <= end_date)
         df_filtered = df[mask]
 
         # Preprocess and visualize
@@ -222,7 +236,7 @@ try:
 
         # 1) Filter Initiations (using your special condition)
         df_initiations = df_filtered[
-        (df['from'] == 'r4yc85M1hwsegVGZ1pawpZPwj65SVs8PzD') &
+        (df['from_address'] == 'r4yc85M1hwsegVGZ1pawpZPwj65SVs8PzD') &
         (~df['memo'].str.startswith("REQUEST_POST_FIAT", na=False)) &
         (~df['memo'].str.startswith("PROPOSED PF", na=False)) &
         (~df['memo'].str.startswith("REWARD RESPONSE", na=False)) &
@@ -232,10 +246,10 @@ try:
         (df['amount'] <= 100)
     ]
 
-        # Group initiations by day (distinct 'to')
+        # Group initiations by day (distinct 'to_address')
         initiations_by_day = (
             df_initiations
-            .groupby('date')['to']
+            .groupby('date')['to_address']
             .nunique()
             .reset_index(name='initiations_count')
         )
