@@ -25,21 +25,7 @@ def fetch_data():
     except Exception as e:
         st.error(f"Error fetching data: {e}")
         return pd.DataFrame()
-"""
-try:
-    st.info("Running transaction_script.py...")
-    result = subprocess.run(
-        ["python", "transaction_script.py"],
-        check=True,
-        text=True,
-        capture_output=True
-    )
-    st.success("Script ran successfully!")
-    st.text("Output:\n" + result.stdout)
-except subprocess.CalledProcessError as e:
-    st.error("Script failed to run.")
-    st.text(f"Error Output:\n{e.stderr}")
-"""
+
 # Function to load the CSV file
 @st.cache_data
 def load_csv():
@@ -218,7 +204,7 @@ try:
     )
 
     # Validate date input
-    if start_date > end_date:
+    if start_date >= end_date:
         st.error("Start date must be before end date.")
     else:
         # Filter data within selected date range
@@ -276,11 +262,7 @@ try:
         # 4) Create one line chart with two lines
         df_line_chart = df_line.set_index('date')[['initiations_count', 'completed_count']]
         st.line_chart(data=df_line_chart, height=400)
-        """
-        st.write("### Daily Transactions")
-        bar_chart = create_barchart(grouped_data)
-        st.pyplot(bar_chart)
-        """
+
         st.write("### Network Graph of Address Relationships")
         G = create_graph(df_filtered)
         plot_graph(G)
