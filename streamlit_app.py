@@ -26,11 +26,6 @@ def fetch_data():
         st.error(f"Error fetching data: {e}")
         return pd.DataFrame()
 
-# Function to load the CSV file
-@st.cache_data
-def load_csv():
-    return pd.read_csv("xrp_token_payments.csv")
-
 # Function to preprocess the data
 def preprocess_data(df):
     df['date'] = pd.to_datetime(df['transaction_timestamp']).dt.date
@@ -80,9 +75,7 @@ def calculate_aggregates(df):
         "ACCEPTED TASKS": acceptance_reason_count,
         "COMPLETED TASKS": reward_response_count,
         "TASK REWARDS": reward_response_sum,
-
     }
-
 
 # Function to create the bar chart
 def create_barchart(data):
