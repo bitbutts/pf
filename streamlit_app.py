@@ -9,6 +9,8 @@ import networkx as nx
 import os
 import datetime
 
+conn = st.connection("neon", type="sql")
+st.write("connection successfull")
 
 try:
     st.info("Running transaction_script.py...")
