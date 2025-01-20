@@ -133,9 +133,13 @@ def calculate_leaderboard(df, from_address):
     leaderboard = (
         df_filtered
         .groupby('to_address')
-        .agg(total_amount=('amount', 'sum'), transaction_count=('amount', 'count'))
+        .agg(
+            total_amount=('amount', lambda x: round(x.sum())),  # Round the sum
+            transaction_count=('amount', 'count')
+        )
         .reset_index()
         .sort_values(by='total_amount', ascending=False)
+        .head(10)
     )
 
     return leaderboard
@@ -300,9 +304,7 @@ try:
 
         st.write("### Initiations vs. Completed Tasks by Day")
         task_data = calculate_tasks(df_filtered)
-        st.table(pd.DataFrame(task_data, index=[0]))
-       
-       
+            
         st.line_chart(data=task_data, height=400)
         # Generate the leaderboard table
         leaderboard = calculate_leaderboard(df_filtered, from_address)
