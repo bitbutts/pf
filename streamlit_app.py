@@ -37,22 +37,19 @@ def calculate_aggregates(df):
     unique_to_addresses = df['to_address'].nunique()
     unique_from_addresses = df['from_address'].nunique()
     
-    mean_amount = df['amount'].mean()
+    mean_amount = round(df['amount'].mean(),0)
     median_amount = df['amount'].median()
     min_amount = df['amount'].min()
     max_amount = df['amount'].max()
     std_amount = df['amount'].std()
-    total_transaction_volume = df['amount'].sum()
+    total_transaction_volume = round(df['amount'].sum(),0)
     
     total_transactions = len(df)
-    earliest_transaction_date = pd.to_datetime(df['transaction_timestamp']).min().date()
-    latest_transaction_date = pd.to_datetime(df['transaction_timestamp']).max().date()
-    total_transaction_days = pd.to_datetime(df['transaction_timestamp']).dt.date.nunique()
 
     request_post_fiat_count = df[df['memo'].str.startswith("REQUEST_POST_FIAT", na=False)].shape[0]
     proposed_pf_count = df[df['memo'].str.startswith("PROPOSED PF", na=False)].shape[0]
     reward_response_count = df[df['memo'].str.startswith("REWARD RESPONSE", na=False)].shape[0]
-    reward_response_sum = df[df['memo'].str.startswith("REWARD RESPONSE", na=False)]['amount'].sum()
+    reward_response_sum = round(df[df['memo'].str.startswith("REWARD RESPONSE", na=False)]['amount'].sum(),0)
     acceptance_reason_count = df[df['memo'].str.startswith("ACCEPTANCE REASON", na=False)].shape[0]
     initiation_reward_count = df[
         (df['from_address'] == 'r4yc85M1hwsegVGZ1pawpZPwj65SVs8PzD') &
@@ -76,6 +73,49 @@ def calculate_aggregates(df):
         "COMPLETED TASKS": reward_response_count,
         "TASK REWARDS": reward_response_sum,
     }
+    
+def calculate_tasks(df):
+     df_initiations = df[
+        (df['from_address'] == 'r4yc85M1hwsegVGZ1pawpZPwj65SVs8PzD') &
+        (~df['memo'].str.startswith("REQUEST_POST_FIAT", na=False)) &
+        (~df['memo'].str.startswith("PROPOSED PF", na=False)) &
+        (~df['memo'].str.startswith("REWARD RESPONSE", na=False)) &
+        (~df['memo'].str.startswith("VERIFICATION PROMPT", na=False)) &
+        (~df['memo'].str.startswith("Corbanu Reward", na=False)) &
+        (~df['memo'].str.startswith("Initial PFT Grant Post Initiation", na=False)) &
+        (df['amount'] <= 100)
+    ]
+
+        # Group initiations by day (distinct 'to_address')
+        initiations_by_day = (
+            df_initiations
+            .groupby('date')['to_address']
+            .nunique()
+            .reset_index(name='initiations_count')
+        )
+
+        # 2) Filter Completed Tasks
+        df_completed = df_filtered[df_filtered['memo'].str.startswith("REWARD RESPONSE", na=False)]
+
+        # Group completed tasks by day (count how many)
+        completed_by_day = (
+            df_completed
+            .groupby('date')
+            .size()
+            .reset_index(name='completed_count')
+        )
+
+        # 3) Merge both on date, fill missing days with 0
+        df_line = pd.merge(
+            initiations_by_day,
+            completed_by_day,
+            on='date',
+            how='outer'
+        ).fillna(0)
+
+        # 4) Create one line chart with two lines
+        df_line_chart = df_line.set_index('date')[['initiations_count', 'completed_count']]
+        return df_line_chart
 
 # Function to create the bar chart
 def create_barchart(data):
@@ -212,48 +252,10 @@ try:
         st.table(pd.DataFrame(aggregates, index=[0]))
 
         st.write("### Initiations vs. Completed Tasks by Day")
-
+        task_data = calculate_tasks(df_filtered)
+        st.table(pd.DataFrame(task_data, index=[0]))
         # 1) Filter Initiations (using your special condition)
-        df_initiations = df_filtered[
-        (df['from_address'] == 'r4yc85M1hwsegVGZ1pawpZPwj65SVs8PzD') &
-        (~df['memo'].str.startswith("REQUEST_POST_FIAT", na=False)) &
-        (~df['memo'].str.startswith("PROPOSED PF", na=False)) &
-        (~df['memo'].str.startswith("REWARD RESPONSE", na=False)) &
-        (~df['memo'].str.startswith("VERIFICATION PROMPT", na=False)) &
-        (~df['memo'].str.startswith("Corbanu Reward", na=False)) &
-        (~df['memo'].str.startswith("Initial PFT Grant Post Initiation", na=False)) &
-        (df['amount'] <= 100)
-    ]
-
-        # Group initiations by day (distinct 'to_address')
-        initiations_by_day = (
-            df_initiations
-            .groupby('date')['to_address']
-            .nunique()
-            .reset_index(name='initiations_count')
-        )
-
-        # 2) Filter Completed Tasks
-        df_completed = df_filtered[df_filtered['memo'].str.startswith("REWARD RESPONSE", na=False)]
-
-        # Group completed tasks by day (count how many)
-        completed_by_day = (
-            df_completed
-            .groupby('date')
-            .size()
-            .reset_index(name='completed_count')
-        )
-
-        # 3) Merge both on date, fill missing days with 0
-        df_line = pd.merge(
-            initiations_by_day,
-            completed_by_day,
-            on='date',
-            how='outer'
-        ).fillna(0)
-
-        # 4) Create one line chart with two lines
-        df_line_chart = df_line.set_index('date')[['initiations_count', 'completed_count']]
+       
         st.line_chart(data=df_line_chart, height=400)
 
         st.write("### Network Graph of Address Relationships")
