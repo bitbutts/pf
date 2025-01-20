@@ -256,7 +256,7 @@ try:
         st.table(pd.DataFrame(task_data, index=[0]))
         # 1) Filter Initiations (using your special condition)
        
-        st.line_chart(data=df_line_chart, height=400)
+        st.line_chart(data=task_data, height=400)
 
         st.write("### Network Graph of Address Relationships")
         G = create_graph(df_filtered)
