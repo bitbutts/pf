@@ -156,15 +156,14 @@ def calculate_amount_by_day(df, from_address):
     ]
 
     # Group by 'date', summing 'amount'
-    amount_by_day = (
+    day_line = (
         df_filtered
         .groupby('date')
         .agg(total_amount=('amount', 'sum'))
         .reset_index()
     )
+    amount_by_day = day_line.set_index('date')[['initiations_count', 'completed_count']]
 
-    # Set 'date' as the index for Streamlit line chart compatibility
-    amount_by_day.set_index('date', inplace=True)
 
     return amount_by_day
 
