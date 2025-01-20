@@ -37,19 +37,19 @@ def calculate_aggregates(df):
     unique_to_addresses = df['to_address'].nunique()
     unique_from_addresses = df['from_address'].nunique()
     
-    mean_amount = round(df['amount'].mean(),0)
+    mean_amount = int(round(df['amount'].mean()))
     median_amount = df['amount'].median()
     min_amount = df['amount'].min()
     max_amount = df['amount'].max()
     std_amount = df['amount'].std()
-    total_transaction_volume = round(df['amount'].sum(),0)
+    total_transaction_volume = int(round(df['amount'].sum()))
     
     total_transactions = len(df)
 
     request_post_fiat_count = df[df['memo'].str.startswith("REQUEST_POST_FIAT", na=False)].shape[0]
     proposed_pf_count = df[df['memo'].str.startswith("PROPOSED PF", na=False)].shape[0]
     reward_response_count = df[df['memo'].str.startswith("REWARD RESPONSE", na=False)].shape[0]
-    reward_response_sum = round(df[df['memo'].str.startswith("REWARD RESPONSE", na=False)]['amount'].sum(),0)
+    reward_response_sum = int(round(df[df['memo'].str.startswith("REWARD RESPONSE", na=False)]['amount'].sum()))
     acceptance_reason_count = df[df['memo'].str.startswith("ACCEPTANCE REASON", na=False)].shape[0]
     initiation_reward_count = df[
         (df['from_address'] == 'r4yc85M1hwsegVGZ1pawpZPwj65SVs8PzD') &
@@ -118,6 +118,51 @@ def calculate_tasks(df):
     df_line_chart = df_line.set_index('date')[['initiations_count', 'completed_count']]
     return df_line_chart
 
+def calculate_leaderboard(df, from_address):
+    """
+    Generate a leaderboard of addresses with the highest sum of amounts and their counts.
+    """
+    # Filter rows matching the conditions
+    df_filtered = df[
+        (df['from_address'] == from_address) &
+        (df['memo'].str.startswith("RESPONSE REWARD", na=False) |
+         df['memo'].str.startswith("Corbanu Reward", na=False))
+    ]
+
+    # Group by 'to_address', summing 'amount' and counting occurrences
+    leaderboard = (
+        df_filtered
+        .groupby('to_address')
+        .agg(total_amount=('amount', 'sum'), transaction_count=('amount', 'count'))
+        .reset_index()
+        .sort_values(by='total_amount', ascending=False)
+    )
+
+    return leaderboard
+
+def calculate_amount_by_day(df, from_address):
+    """
+    Create a line chart data for the sum of amounts by day.
+    """
+    # Filter rows matching the conditions
+    df_filtered = df[
+        (df['from_address'] == from_address) &
+        (df['memo'].str.startswith("RESPONSE REWARD", na=False) |
+         df['memo'].str.startswith("Corbanu Reward", na=False))
+    ]
+
+    # Group by 'date', summing 'amount'
+    amount_by_day = (
+        df_filtered
+        .groupby('date')
+        .agg(total_amount=('amount', 'sum'))
+        .reset_index()
+    )
+
+    # Set 'date' as the index for Streamlit line chart compatibility
+    amount_by_day.set_index('date', inplace=True)
+
+    return amount_by_day
 
 # Function to create the bar chart
 def create_barchart(data):
@@ -245,20 +290,27 @@ try:
         # Filter data within selected date range
         mask = (df['transaction_timestamp'].dt.date >= start_date) & (df['transaction_timestamp'].dt.date <= end_date)
         df_filtered = df[mask]
-
+        from_address = 'r4yc85M1hwsegVGZ1pawpZPwj65SVs8PzD'
         # Preprocess and visualize
         grouped_data = preprocess_data(df_filtered)
 
         st.write("### Statistical Overview")
         aggregates = calculate_aggregates(df_filtered)
-        st.table(pd.DataFrame(aggregates, index=[0]))
 
         st.write("### Initiations vs. Completed Tasks by Day")
         task_data = calculate_tasks(df_filtered)
         st.table(pd.DataFrame(task_data, index=[0]))
-        # 1) Filter Initiations (using your special condition)
+       
        
         st.line_chart(data=task_data, height=400)
+        # Generate the leaderboard table
+        leaderboard = calculate_leaderboard(df_filtered, from_address)
+        st.write("Leaderboard")
+        st.table(leaderboard)
+
+        amount_by_day = calculate_amount_by_day(df_filtered, from_address)
+        st.write("Daily Earned PFT (Taskbot + Corbanu")
+        st.line_chart(data=amount_by_day['total_amount'], height=400)
 
         st.write("### Network Graph of Address Relationships")
         G = create_graph(df_filtered)
