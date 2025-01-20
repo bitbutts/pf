@@ -86,36 +86,36 @@ def calculate_tasks(df):
         (df['amount'] <= 100)
     ]
 
-        # Group initiations by day (distinct 'to_address')
-        initiations_by_day = (
-            df_initiations
-            .groupby('date')['to_address']
-            .nunique()
-            .reset_index(name='initiations_count')
-        )
+    # Group initiations by day (distinct 'to_address')
+    initiations_by_day = (
+        df_initiations
+        .groupby('date')['to_address']
+        .nunique()
+        .reset_index(name='initiations_count')
+    )
 
-        # 2) Filter Completed Tasks
-        df_completed = df_filtered[df_filtered['memo'].str.startswith("REWARD RESPONSE", na=False)]
+    # 2) Filter Completed Tasks
+    df_completed = df_filtered[df_filtered['memo'].str.startswith("REWARD RESPONSE", na=False)]
 
-        # Group completed tasks by day (count how many)
-        completed_by_day = (
-            df_completed
-            .groupby('date')
-            .size()
-            .reset_index(name='completed_count')
-        )
+    # Group completed tasks by day (count how many)
+    completed_by_day = (
+        df_completed
+        .groupby('date')
+        .size()
+        .reset_index(name='completed_count')
+    )
 
-        # 3) Merge both on date, fill missing days with 0
-        df_line = pd.merge(
-            initiations_by_day,
-            completed_by_day,
-            on='date',
-            how='outer'
-        ).fillna(0)
+    # 3) Merge both on date, fill missing days with 0
+    df_line = pd.merge(
+        initiations_by_day,
+        completed_by_day,
+        on='date',
+        how='outer'
+    ).fillna(0)
 
-        # 4) Create one line chart with two lines
-        df_line_chart = df_line.set_index('date')[['initiations_count', 'completed_count']]
-        return df_line_chart
+    # 4) Create one line chart with two lines
+    df_line_chart = df_line.set_index('date')[['initiations_count', 'completed_count']]
+    return df_line_chart
 
 # Function to create the bar chart
 def create_barchart(data):
