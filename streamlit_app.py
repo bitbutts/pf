@@ -311,7 +311,7 @@ try:
         st.table(leaderboard)
 
         amount_by_day = calculate_amount_by_day(df_filtered, from_address)
-        st.write("### Daily Earned PFT (Taskbot + Corbanu")
+        st.write("### Daily Earned PFT (Taskbot + Corbanu)")
         st.line_chart(data=amount_by_day['total_amount'], height=400)
 
         st.write("### Network Graph of Address Relationships")
