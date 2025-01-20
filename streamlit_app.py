@@ -296,6 +296,7 @@ try:
 
         st.write("### Statistical Overview")
         aggregates = calculate_aggregates(df_filtered)
+        st.table(pd.DataFrame(aggregates, index=[0]))
 
         st.write("### Initiations vs. Completed Tasks by Day")
         task_data = calculate_tasks(df_filtered)
@@ -305,11 +306,11 @@ try:
         st.line_chart(data=task_data, height=400)
         # Generate the leaderboard table
         leaderboard = calculate_leaderboard(df_filtered, from_address)
-        st.write("Leaderboard")
+        st.write("### Leaderboard")
         st.table(leaderboard)
 
         amount_by_day = calculate_amount_by_day(df_filtered, from_address)
-        st.write("Daily Earned PFT (Taskbot + Corbanu")
+        st.write("### Daily Earned PFT (Taskbot + Corbanu")
         st.line_chart(data=amount_by_day['total_amount'], height=400)
 
         st.write("### Network Graph of Address Relationships")
