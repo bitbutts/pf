@@ -75,7 +75,8 @@ def calculate_aggregates(df):
     }
     
 def calculate_tasks(df):
-     df_initiations = df[
+    # 1) Filter Initiations
+    df_initiations = df[
         (df['from_address'] == 'r4yc85M1hwsegVGZ1pawpZPwj65SVs8PzD') &
         (~df['memo'].str.startswith("REQUEST_POST_FIAT", na=False)) &
         (~df['memo'].str.startswith("PROPOSED PF", na=False)) &
@@ -95,7 +96,7 @@ def calculate_tasks(df):
     )
 
     # 2) Filter Completed Tasks
-    df_completed = df_filtered[df_filtered['memo'].str.startswith("REWARD RESPONSE", na=False)]
+    df_completed = df[df['memo'].str.startswith("REWARD RESPONSE", na=False)]
 
     # Group completed tasks by day (count how many)
     completed_by_day = (
@@ -116,6 +117,7 @@ def calculate_tasks(df):
     # 4) Create one line chart with two lines
     df_line_chart = df_line.set_index('date')[['initiations_count', 'completed_count']]
     return df_line_chart
+
 
 # Function to create the bar chart
 def create_barchart(data):
