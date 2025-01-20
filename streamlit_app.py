@@ -125,7 +125,7 @@ def calculate_leaderboard(df, from_address):
     # Filter rows matching the conditions
     df_filtered = df[
         (df['from_address'] == from_address) &
-        (df['memo'].str.startswith("RESPONSE REWARD", na=False) |
+        (df['memo'].str.startswith("REWARD RESPONSE", na=False) |
          df['memo'].str.startswith("Corbanu Reward", na=False))
     ]
 
@@ -151,7 +151,7 @@ def calculate_amount_by_day(df, from_address):
     # Filter rows matching the conditions
     df_filtered = df[
         (df['from_address'] == from_address) &
-        (df['memo'].str.startswith("RESPONSE REWARD", na=False) |
+        (df['memo'].str.startswith("REWARD RESPONSE", na=False) |
          df['memo'].str.startswith("Corbanu Reward", na=False))
     ]
 
