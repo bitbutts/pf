@@ -162,7 +162,7 @@ def calculate_amount_by_day(df, from_address):
         .agg(total_amount=('amount', 'sum'))
         .reset_index()
     )
-    amount_by_day = day_line.set_index('date')[['initiations_count', 'completed_count']]
+    amount_by_day = day_line.set_index('date')[['total_amount', 'transaction_count']]
 
 
     return amount_by_day
