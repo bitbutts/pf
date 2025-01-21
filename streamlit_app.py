@@ -135,11 +135,11 @@ def calculate_leaderboard(df, from_address):
         df_filtered
         .groupby('to_address')
         .agg(
-            total_amount=('amount', lambda x: round(x.sum())),  # Round the sum
-            transaction_count=('amount', 'count')
+            awarded_PFT=('amount', lambda x: round(x.sum())),  # Round the sum
+            completed_tasks=('amount', 'count')
         )
         .reset_index()
-        .sort_values(by='total_amount', ascending=False)
+        .sort_values(by='awarded_PFT', ascending=False)
         .head(10)
     )
 
