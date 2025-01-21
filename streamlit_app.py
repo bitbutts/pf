@@ -156,16 +156,12 @@ def calculate_amount_by_day(df, from_address):
             df['memo'].str.startswith("REWARD RESPONSE", na=False) |
             df['memo'].str.startswith("Corbanu Reward", na=False)
         )
-    ].copy()  # Use .copy() to avoid SettingWithCopyWarning
+    ].copy()
 
     # Create a new column for memo type
     df_filtered['memo_type'] = df_filtered['memo'].apply(
         lambda x: "REWARD RESPONSE" if x.startswith("REWARD RESPONSE") else "Corbanu Reward"
     )
-
-    # Ensure 'date' is in datetime format
-    if not np.issubdtype(df_filtered['date'].dtype, np.datetime64):
-        df_filtered['date'] = pd.to_datetime(df_filtered['date'])
 
     # Group by 'date' and 'memo_type', summing 'amount'
     day_line = (
@@ -175,13 +171,7 @@ def calculate_amount_by_day(df, from_address):
         .reset_index()
     )
 
-    # Pivot the DataFrame to have separate columns for each memo_type
-    amount_by_day = day_line.pivot(index='date', columns='memo_type', values='total_amount').fillna(0)
-
-    # Optionally, sort by date
-    amount_by_day = amount_by_day.sort_index()
-
-    return amount_by_day
+    return day_line
 
 # Function to create the bar chart
 def create_barchart(data):
