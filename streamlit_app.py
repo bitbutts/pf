@@ -172,7 +172,7 @@ def calculate_amount_by_day(df, from_address):
     
     # Create a new column for memo type
     df_filtered['memo_type'] = df_filtered['memo'].apply(
-        lambda x: "REWARD RESPONSE" if x.startswith("REWARD RESPONSE") else "Corbanu Reward"
+        lambda x: "TASKBOT" if x.startswith("REWARD RESPONSE") else "CORBANU"
     )
     
     # Group by 'date' and 'memo_type', summing 'amount'
