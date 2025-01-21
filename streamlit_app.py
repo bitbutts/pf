@@ -145,10 +145,22 @@ def calculate_leaderboard(df, from_address):
 
     return leaderboard
 
+
 def calculate_amount_by_day(df, from_address):
     """
     Create a line chart data for the sum of amounts by day, separated by memo type.
+    
+    Args:
+        df (pd.DataFrame): The prefiltered DataFrame containing transaction data.
+        from_address (str): The address to filter transactions by.
+    
+    Returns:
+        pd.DataFrame: Pivoted DataFrame with dates as index and memo types as columns.
     """
+    # Ensure 'date' is in datetime format
+    if not pd.api.types.is_datetime64_any_dtype(df['date']):
+        df['date'] = pd.to_datetime(df['date'], errors='coerce').dt.date
+    
     # Filter rows matching the conditions
     df_filtered = df[
         (df['from_address'] == from_address) &
@@ -157,12 +169,12 @@ def calculate_amount_by_day(df, from_address):
             df['memo'].str.startswith("Corbanu Reward", na=False)
         )
     ].copy()
-
+    
     # Create a new column for memo type
     df_filtered['memo_type'] = df_filtered['memo'].apply(
         lambda x: "REWARD RESPONSE" if x.startswith("REWARD RESPONSE") else "Corbanu Reward"
     )
-
+    
     # Group by 'date' and 'memo_type', summing 'amount'
     day_line = (
         df_filtered
@@ -170,8 +182,14 @@ def calculate_amount_by_day(df, from_address):
         .agg(total_amount=('amount', 'sum'))
         .reset_index()
     )
-
-    return day_line
+    
+    # Pivot the DataFrame to have separate columns for each memo_type
+    amount_by_day = day_line.pivot(index='date', columns='memo_type', values='total_amount').fillna(0)
+    
+    # Sort by date
+    amount_by_day = amount_by_day.sort_index()
+    
+    return amount_by_day
 
 # Function to create the bar chart
 def create_barchart(data):
