@@ -335,7 +335,7 @@ def plot_graph(G,
     
     plt.axis("off")
     fig = plt.gcf()
-    plt.show(fig)
+    st.pyplot(fig)
 
 
 
