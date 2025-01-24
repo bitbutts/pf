@@ -48,8 +48,10 @@ def calculate_aggregates(df):
 
     request_post_fiat_count = df[df['memo'].str.startswith("REQUEST_POST_FIAT", na=False)].shape[0]
     proposed_pf_count = df[df['memo'].str.startswith("PROPOSED PF", na=False)].shape[0]
-    reward_response_count = df[df['memo'].str.startswith("REWARD RESPONSE", na=False)].shape[0]
-    reward_response_sum = int(round(df[df['memo'].str.startswith("REWARD RESPONSE", na=False)]['amount'].sum()))
+    reward_response_count = df[(df['memo'].str.startswith("REWARD RESPONSE", na=False) |
+         df['memo'].str.startswith("Corbanu Reward", na=False))].shape[0]
+    reward_response_sum = int(round(df[(df['memo'].str.startswith("REWARD RESPONSE", na=False) |
+         df['memo'].str.startswith("Corbanu Reward", na=False))]['amount'].sum()))
     acceptance_reason_count = df[df['memo'].str.startswith("ACCEPTANCE REASON", na=False)].shape[0]
     initiation_reward_count = df[
         (df['from_address'] == 'r4yc85M1hwsegVGZ1pawpZPwj65SVs8PzD') &
