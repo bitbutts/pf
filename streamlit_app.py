@@ -204,8 +204,21 @@ def create_barchart(data):
     return fig
 
 
-# Function to create the network graph
-def create_graph(data):
+def set_node_highlights(G, highlight_dict):
+    """
+    For each node in highlight_dict, set the given attributes (e.g. color, label).
+    highlight_dict looks like:
+        {
+          'some_node': {'color': 'blue', 'label': 'my_label'},
+          ...
+        }
+    """
+    for node, props in highlight_dict.items():
+        if node in G:  # Only set if the node actually exists in the graph
+            for key, value in props.items():
+                G.nodes[node][key] = value
+
+def create_graph(data, highlight_dict=None):
     # Create a directed graph
     G = nx.DiGraph()
 
@@ -218,70 +231,113 @@ def create_graph(data):
     # Add all nodes with default sizes
     all_addresses = set(data['to_address']).union(set(data['from_address']))
     for address in all_addresses:
-        G.add_node(address, size=inflow.get(address, 0))  # Default size to 0 if no inflow
+        G.add_node(address, size=inflow.get(address, 0))  # default node size
 
-    # Add edges with weights (transaction count)
+    # Add edges with weights
     for (from_addr, to_addr), weight in edge_weights.items():
         G.add_edge(from_addr, to_addr, weight=weight)
 
+    # If we have a highlight dictionary, set those node attributes
+    if highlight_dict:
+        set_node_highlights(G, highlight_dict)
+
     return G
 
-# Function to plot the graph with adjustable node and edge sizes
 def plot_graph(G, 
                min_node_size=100, max_node_size=2000,
                min_edge_size=1,   max_edge_size=8,
-               spacing_factor=5):
+               spacing_factor=5,
+               default_color="skyblue",
+               default_label="default",
+               default_size_override=None):
     """
     Plots a network graph with automatically scaled node and edge sizes.
-
-    Args:
-        G (nx.DiGraph): The directed graph to plot.
-        min_node_size (int): Minimum node size in the plotted graph.
-        max_node_size (int): Maximum node size in the plotted graph.
-        min_edge_size (int): Minimum edge width in the plotted graph.
-        max_edge_size (int): Maximum edge width in the plotted graph.
-        spacing_factor (float): Multiplier to control the spacing between nodes.
+    - If a node has 'size_override', we use that instead of the scaled size.
+    - Groups nodes by (color, label) so that each group is drawn separately,
+      allowing a color legend via plt.legend().
     """
+
     plt.figure(figsize=(12, 12))
 
-    # Helper function to scale values (linear)
     def linear_scale(values, min_out, max_out):
-        """
-        Scales a list of numeric values to [min_out, max_out] linearly.
-        If all values are the same, all get mid-range. If empty, return [].
-        """
         if not values:
             return []
         min_val = min(values)
         max_val = max(values)
         if min_val == max_val:
-            # If all values are the same, set them all to the midpoint.
             mid = (max_out + min_out) / 2
             return [mid] * len(values)
-        # Otherwise, linear interpolation for each value:
-        scaled = [
+        return [
             min_out + (v - min_val) / (max_val - min_val) * (max_out - min_out)
             for v in values
         ]
-        return scaled
 
-    # 1) Collect node inflows and edge weights
-    node_inflows = [G.nodes[node]['size'] for node in G.nodes]
-    edge_wts = [G[u][v]['weight'] for u, v in G.edges]
+    # -- 1) Scale Node & Edge Sizes --
+    node_list = list(G.nodes())
+    node_inflows = [G.nodes[n].get("size", 0) for n in node_list]
+    edge_wts     = [G[u][v]["weight"] for u, v in G.edges]
 
-    # 2) Auto-scale node sizes and edge widths
-    scaled_node_sizes = linear_scale(node_inflows, min_node_size, max_node_size)
-    scaled_edge_widths = linear_scale(edge_wts, min_edge_size, max_edge_size)
+    scaled_node_sizes  = linear_scale(node_inflows, min_node_size, max_node_size)
+    scaled_edge_widths = linear_scale(edge_wts,     min_edge_size, max_edge_size)
 
-    # 3) Calculate node positions with spring layout
-    pos = nx.spring_layout(G, seed=42, k=spacing_factor / max(len(G.nodes), 1), iterations=50)
+    # -- 2) Apply size_override if present --
+    for i, node in enumerate(node_list):
+        override = G.nodes[node].get("size_override", default_size_override)
+        if override is not None:
+            scaled_node_sizes[i] = override
 
-    # 4) Draw the graph
-    nx.draw_networkx_nodes(G, pos, node_size=scaled_node_sizes, node_color="skyblue", alpha=0.8)
-    nx.draw_networkx_edges(G, pos, width=scaled_edge_widths, alpha=0.5)
+    # -- 3) Layout --
+    pos = nx.spring_layout(
+        G, 
+        seed=42,
+        k=spacing_factor / max(len(G.nodes), 1),
+        iterations=50
+    )
 
+    # -- 4) Draw Edges Once --
+    nx.draw_networkx_edges(
+        G, pos,
+        width=scaled_edge_widths,
+        alpha=0.5,
+        arrows=True,
+        arrowstyle="-|>"
+    )
+
+    # -- 5) Group nodes by (color, label) so we can draw them separately --
+    #         This allows us to pass a distinct 'label' to each color group,
+    #         so that plt.legend() will show them.
+    from collections import defaultdict
+    color_label_groups = defaultdict(list)  # (color, label) -> list of indices
+
+    for i, node in enumerate(node_list):
+        c = G.nodes[node].get("color", default_color)
+        lbl = G.nodes[node].get("label", default_label)
+        color_label_groups[(c, lbl)].append(i)
+
+    # Now we draw each group of nodes separately
+    for (c, lbl), indices in color_label_groups.items():
+        # Extract the relevant node indices
+        group_node_list   = [node_list[i] for i in indices]
+        group_node_sizes  = [scaled_node_sizes[i] for i in indices]
+
+        nx.draw_networkx_nodes(
+            G,
+            pos,
+            nodelist=group_node_list,
+            node_size=group_node_sizes,
+            node_color=c,
+            alpha=0.8,
+            label=lbl  # <-- This is how we get a legend entry
+        )
+
+
+    plt.legend(scatterpoints=1, loc="best")
+    
     plt.axis("off")
-    st.pyplot(plt)
+    fig = plt.gcf()
+    plt.show(fig)
+
+
 
     
 # Streamlit app
@@ -297,7 +353,7 @@ try:
     # Calculate a default 30-day range ending yesterday
     default_end_date = datetime.date.today() - datetime.timedelta(days=1)
     default_start_date = default_end_date - datetime.timedelta(days=29)
-
+    
     # Date selection with default values
     start_date = st.date_input(
         "Start Date",
@@ -339,10 +395,16 @@ try:
         amount_by_day = calculate_amount_by_day(df_filtered, from_address)
         st.write("### Daily Earned PFT (Taskbot + Corbanu)")
         st.line_chart(data=amount_by_day, height=400)
-
+        highlight_dict = {"r4yc85M1hwsegVGZ1pawpZPwj65SVs8PzD": {"color": "green",  "label": "task_node","size_override": 200},}
         st.write("### Network Graph of Address Relationships")
-        G = create_graph(df_filtered)
-        plot_graph(G)
+
+        G = create_graph(df_filtered, highlight_dict=highlight_dict)
+
+        # Plot the graph
+        plot_graph(G, 
+                   min_node_size=50, max_node_size=2000,
+                   min_edge_size=0.2,   max_edge_size=4,
+                   spacing_factor=900)
 
 except FileNotFoundError:
     st.error("The file 'transactions.csv' could not be found or generated.")
