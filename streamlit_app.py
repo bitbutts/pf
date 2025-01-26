@@ -238,7 +238,6 @@ def create_graph(data, highlight_dict=None):
         in_ = inflow_by_address.get(address, 0)
         out_ = outflow_by_address.get(address, 0)
         net_flow = in_ - out_
-        print(f"{address}: {net_flow}")
     
         # Set net_flow as the node "size"
         G.add_node(address, size=net_flow)  # default node size
