@@ -388,10 +388,12 @@ def plot_graph(
 
 
 
-    
-# Streamlit app
-st.title("PFT Transactions Last 30 days")
 
+
+# Streamlit app
+st.title("PFT Transactions Overview")
+twit = "https://x.com/pftdaily"
+st.markdown(f"Follow for daily updates: ({twit})")
 # Load the CSV file
 try:
     df = fetch_data()
