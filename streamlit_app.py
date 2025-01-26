@@ -455,6 +455,7 @@ try:
     "rnQUEEg8yyjrwk9FhyXpKavHyCRJM9BDMW": {"color": "grey",  "label": "","size_override": 200},
     "rpb7dex8DMLRXunDcTbbQeteCCYcyo9uSd": {"color": "pink",  "label": "church_node","size_override": 200},
     "rMEQBmJZ8e6fFGsPpqbhGNC3v4JvptojA4": {"color": "indigo",  "label": "image_node","size_override": 200},
+    "rawQ8tEPb7EvAgQHDMRQGVEuq8r4QnjY8C": {"color": "yellow",  "label": "NFT_node","size_override": 200},        
 }
         st.write("### Network Graph of Address Relationships")
 
