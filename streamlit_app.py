@@ -395,7 +395,39 @@ try:
         amount_by_day = calculate_amount_by_day(df_filtered, from_address)
         st.write("### Daily Earned PFT (Taskbot + Corbanu)")
         st.line_chart(data=amount_by_day, height=400)
-        highlight_dict = {"r4yc85M1hwsegVGZ1pawpZPwj65SVs8PzD": {"color": "green",  "label": "task_node","size_override": 200},}
+        highlight_dict = {
+    "r46SUhCzyGE4KwBnKQ6LmDmJcECCqdKy4q": {"color": "grey",  "label": "","size_override": 200},
+    "rsw1ujCSAmmFDc1CpxMnxEhWVP2Z1mo7kN": {"color": "grey",  "label": "","size_override": 200},
+    "rwFaFPW7FSfQdiutvjXdgKaZP9j3rjHa7G": {"color": "grey",  "label": "","size_override": 200},
+    "rJmuEj41K5x8dY5dKkTzszVxCycntEoyYw": {"color": "grey",  "label": "","size_override": 200},
+    "rKvbXkvheYohXkwuwFgeqw5ZVXE8W31tTH": {"color": "grey",  "label": "","size_override": 200},
+    "rM9HDVyvrtLtEq8tB5TL5GPBpvpw79Xbba": {"color": "grey",  "label": "","size_override": 200},
+    "rK97QScvMbx7KSCSeqWUjMKXtcgM2UMvtD": {"color": "grey",  "label": "","size_override": 200},
+    "rfxzpKUSFXEpj6VxTr8EPJGgDxZgGJM6YQ": {"color": "grey",  "label": "","size_override": 200},
+    "rBvzF3yALrRfPFAEK6ygZbRsdAriUF9PpD": {"color": "grey",  "label": "","size_override": 200},
+    "rHWmH6GjaVWhMoXSuq11juqPWFufmVEteT": {"color": "grey",  "label": "","size_override": 200},
+    "r9wsgt9CBhC2R6Sq7YwGfKUM8ojw9EY7j5": {"color": "grey",  "label": "","size_override": 200},
+    "rdnRzVhTX4wHz31RQzLAjRYVqYVMLvSqX": {"color": "grey",  "label": "","size_override": 200},
+    "rJN5fhHUnfpmB2DieVd7in5EQdgV2986q7": {"color": "grey",  "label": "","size_override": 200}, 
+    "rHwgVWo7AQPQizCHNQKUYcHajxxH3j9qkg": {"color": "grey",  "label": "","size_override": 200},
+    "rUBpviypUHcpXrTh1SL76dbF7ArsZWVM7": {"color": "grey",  "label": "","size_override": 200},
+    "rf1QSqAYDf3rcoKRvEsvcjS5VJUrK4Cvvj": {"color": "grey",  "label": "","size_override": 200},
+    "rP7F2sGqXVvBGf68cJiGcePUELfHozD4EZ": {"color": "grey",  "label": "","size_override": 200},
+    "ra7oF4GVeFRRQRGjfLh3z3hghMp1RtEtQd": {"color": "grey",  "label": "","size_override": 200},
+    "rfcZsUJQFCx7vymVZQuGdUoc7vvp4pDXNN": {"color": "grey",  "label": "","size_override": 200},
+    "rPJQWB7AQp5HG5pkABxKqH1Tfvr7ULfEs": {"color": "grey",  "label": "","size_override": 200},
+    "rwPECRpRYGCBPWBeuHFNJPTgdyFyUcH8Yu": {"color": "grey",  "label": "","size_override": 200},
+    "r4MWXRPbp9TZpGmEx3Ytm3ScnojuPUqNuU": {"color": "grey",  "label": "","size_override": 200},
+    "rpoKD6Ye3aE31AHWFfxMc2kxx3mjGtah4X": {"color": "grey",  "label": "","size_override": 200},
+    "rPAXsJ28qqvDodmNxd7NJKqkvu2Anf1Dib": {"color": "grey",  "label": "","size_override": 200},
+    "r4yc85M1hwsegVGZ1pawpZPwj65SVs8PzD": {"color": "green",  "label": "","size_override": 200},
+    "rnQUEEg8yyjrwk9FhyXpKavHyCRJM9BDMW": {"color": "grey",  "label": "","size_override": 200},
+    "rJ1mBMhEBKack5uTQvM8vWoAntbufyG9Yn": {"color": "orange",  "label": "ODV_node","size_override": 200},
+    "rJUYompGetiVrHvKsNxR6HTVjYtX71mjfA": {"color": "blue",  "label": "expert_node","size_override": 200},
+    "rnqZkQS86AE1xmEsaVA8jfwjyzoyhas9am": {"color": "grey",  "label": "","size_override": 200},
+    "rpb7dex8DMLRXunDcTbbQeteCCYcyo9uSd": {"color": "pink",  "label": "church_node","size_override": 200},
+    "rMEQBmJZ8e6fFGsPpqbhGNC3v4JvptojA4": {"color": "indigo",  "label": "image_node","size_override": 200},
+}
         st.write("### Network Graph of Address Relationships")
 
         G = create_graph(df_filtered, highlight_dict=highlight_dict)
