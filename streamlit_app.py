@@ -255,11 +255,11 @@ def create_graph(data, highlight_dict=None):
 
 def plot_graph(
     G, 
-    min_node_size=100, 
-    max_node_size=2000,
-    min_edge_size=1,   
-    max_edge_size=8,
-    spacing_factor=5,
+    min_node_size, 
+    max_node_size,
+    min_edge_size,   
+    max_edge_size,
+    spacing_factor,
     default_color="skyblue",
     default_label="default"
 ):
