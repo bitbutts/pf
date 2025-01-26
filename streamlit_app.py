@@ -480,9 +480,9 @@ try:
 
         # Plot the graph
         plot_graph(G, 
-                   min_node_size=50, max_node_size=2000,
-                   min_edge_size=0.2,   max_edge_size=4,
-                   spacing_factor=900)
+           min_node_size=20, max_node_size=250,
+           min_edge_size=0.05,   max_edge_size=5,
+           spacing_factor=800)
 
 except FileNotFoundError:
     st.error("The file 'transactions.csv' could not be found or generated.")
