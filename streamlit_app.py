@@ -446,7 +446,7 @@ try:
         st.line_chart(data=amount_by_day, height=400)
         highlight_dict = {
 
-    "r4yc85M1hwsegVGZ1pawpZPwj65SVs8PzD": {"color": "green",  "label": "","size_override": 200},
+    "r4yc85M1hwsegVGZ1pawpZPwj65SVs8PzD": {"color": "green",  "label": "task_node","size_override": 200},
     "rnQUEEg8yyjrwk9FhyXpKavHyCRJM9BDMW": {"color": "grey",  "label": "","size_override": 200},
     "rJ1mBMhEBKack5uTQvM8vWoAntbufyG9Yn": {"color": "orange",  "label": "ODV_node","size_override": 200},
     "rJUYompGetiVrHvKsNxR6HTVjYtX71mjfA": {"color": "blue",  "label": "expert_node","size_override": 200},
