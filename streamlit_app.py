@@ -242,7 +242,7 @@ def create_graph(data, highlight_dict=None):
     
         # Set net_flow as the node "size"
         G.add_node(address, size=net_flow)  # default node size
-        if net_flow > 2_000_000:
+        if abs(net_flow) > 2_000_000:
             G.nodes[address]['color'] = 'grey'
             G.nodes[address]['size_override'] = 200
             G.nodes[address]['label'] = ""
