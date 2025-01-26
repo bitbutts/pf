@@ -381,6 +381,7 @@ def plot_graph(
 
     plt.legend(scatterpoints=1, loc="best")
     plt.axis("off")
+    st.pyplot(plt)
 
 
 
