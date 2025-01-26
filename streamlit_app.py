@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 import networkx as nx
 import os
 import datetime
+from collections import defaultdict
 
 conn = st.connection("neon", type="sql")
 
