@@ -480,7 +480,7 @@ try:
 
         # Plot the graph
         plot_graph(G, 
-           min_node_size=20, max_node_size=250,
+           min_node_size=26, max_node_size=250,
            min_edge_size=0.05,   max_edge_size=5,
            spacing_factor=800)
 
