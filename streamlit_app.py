@@ -223,15 +223,24 @@ def create_graph(data, highlight_dict=None):
     G = nx.DiGraph()
 
     # Calculate inflows for node size
-    inflow = data.groupby('to_address')['amount'].sum()
+    #inflow = data.groupby('to_address')['amount'].sum()
+    inflow_by_address = data.groupby("to_address")["amount"].sum()
 
+    # Sum of amounts going out of each address
+    outflow_by_address = data.groupby("from_address")["amount"].sum()
     # Calculate edge thickness (transaction count)
-    edge_weights = data.groupby(['from_address', 'to_address'])['amount'].sum()
+    edge_weights = data.groupby(['from_address', 'to_address'])['amount'].count()
 
     # Add all nodes with default sizes
     all_addresses = set(data['to_address']).union(set(data['from_address']))
     for address in all_addresses:
-        G.add_node(address, size=inflow.get(address, 0))  # default node size
+        in_ = inflow_by_address.get(address, 0)
+        out_ = outflow_by_address.get(address, 0)
+        net_flow = in_ - out_
+        print(f"{address}: {net_flow}")
+    
+        # Set net_flow as the node "size"
+        G.add_node(address, size=net_flow)  # default node size
 
     # Add edges with weights
     for (from_addr, to_addr), weight in edge_weights.items():
@@ -243,20 +252,28 @@ def create_graph(data, highlight_dict=None):
 
     return G
 
-def plot_graph(G, 
-               min_node_size=100, max_node_size=2000,
-               min_edge_size=1,   max_edge_size=8,
-               spacing_factor=5,
-               default_color="skyblue",
-               default_label="default",
-               default_size_override=None):
+def plot_graph(
+    G, 
+    min_node_size=100, 
+    max_node_size=2000,
+    min_edge_size=1,   
+    max_edge_size=8,
+    spacing_factor=5,
+    default_color="skyblue",
+    default_label="default"
+):
     """
-    Plots a network graph with automatically scaled node and edge sizes.
-    - If a node has 'size_override', we use that instead of the scaled size.
-    - Groups nodes by (color, label) so that each group is drawn separately,
-      allowing a color legend via plt.legend().
-    """
+    Plots a network graph in Matplotlib, using:
+      1) "size_override" (if present) before scaling,
+      2) Groups nodes by (color, label) for multiple draw calls,
+         enabling a legend via plt.legend().
 
+    1) We skip overridden nodes from the min/max scaling calculation,
+       so their large (or small) override doesn't distort the range 
+       for normal nodes.
+    2) All normal (non-overridden) nodes get scaled to [min_node_size, max_node_size].
+    3) For the legend, we do one draw call per (color, label) group.
+    """
     plt.figure(figsize=(12, 12))
 
     def linear_scale(values, min_out, max_out):
@@ -265,6 +282,7 @@ def plot_graph(G,
         min_val = min(values)
         max_val = max(values)
         if min_val == max_val:
+            # All values identical => assign midpoint
             mid = (max_out + min_out) / 2
             return [mid] * len(values)
         return [
@@ -272,21 +290,49 @@ def plot_graph(G,
             for v in values
         ]
 
-    # -- 1) Scale Node & Edge Sizes --
+    # 1) Collect nodes, edges
     node_list = list(G.nodes())
-    node_inflows = [G.nodes[n].get("size", 0) for n in node_list]
-    edge_wts     = [G[u][v]["weight"] for u, v in G.edges]
+    edge_wts  = [G[u][v]["weight"] for u, v in G.edges]
 
-    scaled_node_sizes  = linear_scale(node_inflows, min_node_size, max_node_size)
-    scaled_edge_widths = linear_scale(edge_wts,     min_edge_size, max_edge_size)
+    # 2) Prepare two lists: normal vs. overridden
+    raw_sizes = [G.nodes[n].get("size", 0) for n in node_list]
+    overrides = [G.nodes[n].get("size_override") for n in node_list]
 
-    # -- 2) Apply size_override if present --
+    normal_nodes   = []
+    normal_values  = []
+    override_nodes = {}
+
     for i, node in enumerate(node_list):
-        override = G.nodes[node].get("size_override", default_size_override)
-        if override is not None:
-            scaled_node_sizes[i] = override
+        if overrides[i] is not None:
+            # This node has a size_override
+            override_nodes[node] = overrides[i]
+        else:
+            # We'll scale this node normally
+            normal_nodes.append(node)
+            normal_values.append(raw_sizes[i])
 
-    # -- 3) Layout --
+    # 3) Scale the normal nodes only
+    scaled_normal_sizes = linear_scale(normal_values, min_node_size, max_node_size)
+
+    # Create final array of node sizes (same length as node_list)
+    scaled_node_sizes = [0] * len(node_list)
+
+    # Fill in the scaled sizes for normal nodes
+    normal_idx = 0
+    for i, node in enumerate(node_list):
+        if node not in override_nodes:
+            scaled_node_sizes[i] = scaled_normal_sizes[normal_idx]
+            normal_idx += 1
+
+    # Fill in override sizes
+    for i, node in enumerate(node_list):
+        if node in override_nodes:
+            scaled_node_sizes[i] = override_nodes[node]
+
+    # 4) Scale edge widths
+    scaled_edge_widths = linear_scale(edge_wts, min_edge_size, max_edge_size)
+
+    # 5) Layout
     pos = nx.spring_layout(
         G, 
         seed=42,
@@ -294,7 +340,7 @@ def plot_graph(G,
         iterations=50
     )
 
-    # -- 4) Draw Edges Once --
+    # Draw edges once
     nx.draw_networkx_edges(
         G, pos,
         width=scaled_edge_widths,
@@ -303,39 +349,37 @@ def plot_graph(G,
         arrowstyle="-|>"
     )
 
-    # -- 5) Group nodes by (color, label) so we can draw them separately --
-    #         This allows us to pass a distinct 'label' to each color group,
-    #         so that plt.legend() will show them.
-    from collections import defaultdict
-    color_label_groups = defaultdict(list)  # (color, label) -> list of indices
-
+    # 6) Group nodes by (color, label) => one draw call per group => legend
+    color_label_groups = defaultdict(list)  # (color, label) -> list of node indices
     for i, node in enumerate(node_list):
-        c = G.nodes[node].get("color", default_color)
-        lbl = G.nodes[node].get("label", default_label)
-        color_label_groups[(c, lbl)].append(i)
+        color = G.nodes[node].get("color", default_color)
+        lbl   = G.nodes[node].get("label", default_label)
+        color_label_groups[(color, lbl)].append(i)
 
-    # Now we draw each group of nodes separately
-    for (c, lbl), indices in color_label_groups.items():
-        # Extract the relevant node indices
-        group_node_list   = [node_list[i] for i in indices]
-        group_node_sizes  = [scaled_node_sizes[i] for i in indices]
+    # For each group, draw the subset of nodes
+    for (color, lbl), indices in color_label_groups.items():
+        group_node_list  = [node_list[i] for i in indices]
+        group_node_sizes = [scaled_node_sizes[i] for i in indices]
 
         nx.draw_networkx_nodes(
-            G,
-            pos,
+            G, pos,
             nodelist=group_node_list,
             node_size=group_node_sizes,
-            node_color=c,
+            node_color=color,
             alpha=0.8,
-            label=lbl  # <-- This is how we get a legend entry
+            label=lbl  # this is used in the legend
         )
 
+    # If you want text labels, you can do them separately
+    # text_labels = {
+    #     n: G.nodes[n].get("label", str(n)) 
+    #     for n in node_list 
+    #     if "label" in G.nodes[n]
+    # }
+    # nx.draw_networkx_labels(G, pos, labels=text_labels, font_size=10)
 
     plt.legend(scatterpoints=1, loc="best")
-    
     plt.axis("off")
-    fig = plt.gcf()
-    st.pyplot(fig)
 
 
 
