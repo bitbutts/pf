@@ -278,7 +278,7 @@ def plot_graph(
     2) All normal (non-overridden) nodes get scaled to [min_node_size, max_node_size].
     3) For the legend, we do one draw call per (color, label) group.
     """
-    plt.figure(figsize=(12, 12))
+    plt.figure(figsize=(15, 15))
 
     def linear_scale(values, min_out, max_out):
         if not values:
