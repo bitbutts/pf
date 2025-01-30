@@ -204,6 +204,42 @@ def create_barchart(data):
     plt.xticks(rotation=45)
     return fig
 
+def calculate_transaction_count(df_filtered):
+    """
+    Groups transactions by date and counts how many transactions occurred on each date.
+    Returns a DataFrame with 'date' as the index and a single column 'transaction_count'.
+    """
+    # Group by date, count number of transactions
+    df_counts = (
+        df.groupby('date')
+          .size()  # Count rows per date
+          .reset_index(name='transaction_count')
+    )
+    
+    # Set 'date' as the index so we can easily plot against it
+    df_counts.set_index('date', inplace=True)
+    
+    return df_counts
+    
+def create_barchart(df_counts):
+    """
+    Takes a DataFrame with index = date and a column = 'transaction_count',
+    and creates a bar chart of transaction counts by date.
+    """
+    fig, ax = plt.subplots(figsize=(10, 6))
+    
+    # Plot a simple bar chart using the index as X values
+    ax.bar(df_counts.index, df_counts['transaction_count'], color='skyblue')
+
+    ax.set_title("Transaction Count by Date")
+    ax.set_xlabel("Date")
+    ax.set_ylabel("Number of Transactions")
+    plt.xticks(rotation=45)
+
+    # Prevent label overlap
+    fig.tight_layout()
+    
+    return fig
 
 def set_node_highlights(G, highlight_dict):
     """
@@ -429,18 +465,23 @@ try:
         from_address = 'r4yc85M1hwsegVGZ1pawpZPwj65SVs8PzD'
         # Preprocess and visualize
         grouped_data = preprocess_data(df_filtered)
-
-        st.write("### Statistical Overview")
+        
+        st.write("### Overview Metrics")
         aggregates = calculate_aggregates(df_filtered)
         st.table(pd.DataFrame(aggregates, index=[0]))
+        df_transaction_counts = calculate_transaction_count(df_filtered)
 
-        st.write("### Initiations vs. Completed Tasks by Day")
+        transactions_by_day = create_barchart(df_transaction_counts)
+        st.write("### Transaction Count by Day")
+        st.bar_chart(data=transactions_by_day,height=400)
+        
+        st.write("### Initiation Rites vs. Completed Tasks by Day")
         task_data = calculate_tasks(df_filtered)
             
         st.line_chart(data=task_data, height=400)
         # Generate the leaderboard table
         leaderboard = calculate_leaderboard(df_filtered, from_address)
-        st.write("### Leaderboard")
+        st.write("### Leaderboard Taskbot + Corbanu")
         st.table(leaderboard)
 
         amount_by_day = calculate_amount_by_day(df_filtered, from_address)
