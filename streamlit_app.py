@@ -194,21 +194,13 @@ def calculate_amount_by_day(df, from_address):
     
     return amount_by_day
 
-# Function to create the bar chart
-def create_barchart(data):
-    fig, ax = plt.subplots()
-    ax.bar(data['date'], data['count'])
-    ax.set_title("Transaction Count by Date")
-    ax.set_xlabel("Date")
-    ax.set_ylabel("Count")
-    plt.xticks(rotation=45)
-    return fig
 
 def calculate_transaction_count(df_filtered):
     """
     Groups transactions by date and counts how many transactions occurred on each date.
     Returns a DataFrame with 'date' as the index and a single column 'transaction_count'.
     """
+    df['date'] = pd.to_datetime(df['date'], errors='coerce').dt.date
     # Group by date, count number of transactions
     df_counts = (
         df.groupby('date')
