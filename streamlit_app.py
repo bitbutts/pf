@@ -307,7 +307,7 @@ def plot_graph(
     3) For the legend, we do one draw call per (color, label) group.
     """
     plt.figure(figsize=(15, 15))
-
+    """
     def linear_scale(values, min_out, max_out):
         if not values:
             return []
@@ -322,7 +322,28 @@ def plot_graph(
             min_out + (v - min_val) / (max_val - min_val) * (max_out - min_out)
             for v in values
         ]
+    """
+    def linear_scale(values, min_out, max_out):
+        if not values:
+            return []
+    
+    # 1) Clamp all negatives to 0 (so the smallest we'll see is 0)
+        clamped = [max(0, v) for v in values]
+    
+    # 2) Now find min and max from the clamped set
+        min_val, max_val = min(clamped), max(clamped)
 
+        if min_val == max_val:
+            # All identical => just give them the midpoint
+            mid = (max_out + min_out) / 2
+            return [mid] * len(clamped)
+    
+        # 3) Scale to [min_out, max_out]
+        return [
+            min_out + (v - min_val) / (max_val - min_val) * (max_out - min_out)
+            for v in clamped
+        ]
+    
     # 1) Collect nodes, edges
     node_list = list(G.nodes())
     edge_wts  = [G[u][v]["weight"] for u, v in G.edges]
