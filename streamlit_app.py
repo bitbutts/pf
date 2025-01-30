@@ -319,7 +319,8 @@ def plot_graph(
     def linear_scale(values, min_out, max_out):
         if not values:
             return []
-        min_val = min(values)
+        min_val = 0
+        #min(values) setting 0 to avoid messing up the scale
         max_val = max(values)
         if min_val == max_val:
             # All values identical => assign midpoint
