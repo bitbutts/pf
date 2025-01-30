@@ -195,7 +195,7 @@ def calculate_amount_by_day(df, from_address):
     return amount_by_day
 
 
-def calculate_transaction_count(df_filtered):
+def calculate_transaction_count(df):
     """
     Groups transactions by date and counts how many transactions occurred on each date.
     Returns a DataFrame with 'date' as the index and a single column 'transaction_count'.
@@ -466,7 +466,7 @@ try:
 
         transactions_by_day = create_barchart(df_transaction_counts)
         st.write("### Transaction Count by Day")
-        st.bar_chart(data=transactions_by_day,height=400)
+        st.bar_chart(df_transaction_counts, height=400)
         
         st.write("### Initiation Rites vs. Completed Tasks by Day")
         task_data = calculate_tasks(df_filtered)
