@@ -307,22 +307,7 @@ def plot_graph(
     3) For the legend, we do one draw call per (color, label) group.
     """
     plt.figure(figsize=(15, 15))
-    """
-    def linear_scale(values, min_out, max_out):
-        if not values:
-            return []
-        min_val = 0
-        #min(values) setting 0 to avoid messing up the scale
-        max_val = max(values)
-        if min_val == max_val:
-            # All values identical => assign midpoint
-            mid = (max_out + min_out) / 2
-            return [mid] * len(values)
-        return [
-            min_out + (v - min_val) / (max_val - min_val) * (max_out - min_out)
-            for v in values
-        ]
-    """
+
     def linear_scale(values, min_out, max_out):
         if not values:
             return []
