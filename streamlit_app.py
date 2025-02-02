@@ -435,9 +435,10 @@ try:
     
     # Convert transaction_timestamp column to datetime for filtering
     df['transaction_timestamp'] = pd.to_datetime(df['transaction_timestamp'])
-
+    default_end_date =df['transaction_timestamp'].max().date()
     # Calculate a default 30-day range ending yesterday
-    default_end_date = datetime.date.today() - datetime.timedelta(days=1)
+    #default_end_date = datetime.date.today() - datetime.timedelta(days=1)
+    
     default_start_date = default_end_date - datetime.timedelta(days=29)
     
     # Date selection with default values
@@ -445,13 +446,13 @@ try:
         "Start Date",
         value=default_start_date,
         min_value=df['transaction_timestamp'].min().date(),
-        max_value=df['transaction_timestamp'].max().date()
+        max_value=default_end_date
     )
     end_date = st.date_input(
         "End Date",
         value=default_end_date,
         min_value=df['transaction_timestamp'].min().date(),
-        max_value=df['transaction_timestamp'].max().date()
+        max_value=default_end_date
     )
 
     # Validate date input
