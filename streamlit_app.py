@@ -62,7 +62,8 @@ def calculate_aggregates(df):
         (~df['memo'].str.startswith("VERIFICATION PROMPT", na=False)) &
         (~df['memo'].str.startswith("Corbanu Reward", na=False)) &
         (~df['memo'].str.startswith("Initial PFT Grant Post Initiation", na=False)) &
-        (df['amount'] <= 100)
+        (df['amount'] <= 100) &
+        (df['amount'] >= 2)
     ]['to_address'].nunique()
 
     return {
@@ -87,8 +88,7 @@ def calculate_tasks(df):
         (~df['memo'].str.startswith("VERIFICATION PROMPT", na=False)) &
         (~df['memo'].str.startswith("Corbanu Reward", na=False)) &
         (~df['memo'].str.startswith("Initial PFT Grant Post Initiation", na=False)) &
-        (df['amount'] <= 100) &
-        (df['amount'] >= 2)
+        (df['amount'] <= 100) 
     ]
 
     # Group initiations by day (distinct 'to_address')
