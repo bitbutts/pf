@@ -88,7 +88,8 @@ def calculate_tasks(df):
         (~df['memo'].str.startswith("VERIFICATION PROMPT", na=False)) &
         (~df['memo'].str.startswith("Corbanu Reward", na=False)) &
         (~df['memo'].str.startswith("Initial PFT Grant Post Initiation", na=False)) &
-        (df['amount'] <= 100) 
+        (df['amount'] <= 100) &
+        (df['amount'] >= 2)
     ]
 
     # Group initiations by day (distinct 'to_address')
